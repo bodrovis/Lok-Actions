@@ -1,3 +1,7 @@
+# Sample GitHub Actions to facilitate content exchange with Lokalise TMS
+
+Push and pull is currently supported.
+
 If you're using the default GITHUB_TOKEN, ensure it has the right permissions. By default, the token's permissions might be limited:
 
     Go to your repository's Settings > Actions > General.
