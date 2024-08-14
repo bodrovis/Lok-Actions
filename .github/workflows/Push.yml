@@ -53,10 +53,13 @@ jobs:
             git diff --name-only origin/$UPSTREAM_BRANCH...HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
           fi
 
+          echo "Checking for new untracked files"
+          git ls-files --others --exclude-standard -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" >> changed_files.txt
+
       - name: Check for Changed Files
         run: |
           if [ ! -s changed_files.txt ]; then
-            echo "No JSON files changed."
+            echo "No files changed."
             exit 0
           fi
 
