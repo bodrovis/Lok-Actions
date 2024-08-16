@@ -22,23 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-
-      # - name: Get changed JSON files
-      #   id: get-changed-files
-      #   run: |
-      #     UPSTREAM_BRANCH=$(cat upstream_branch.txt)
-      #     git fetch origin $UPSTREAM_BRANCH
-      #     if [ "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]; then
-      #       echo "Comparing last two commits on the default branch"
-      #       git diff --name-only HEAD~1 HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
-      #     else
-      #       echo "Comparing branch to upstream branch"
-      #       git diff --name-only origin/$UPSTREAM_BRANCH...HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
-      #     fi
-
-      #     echo "Checking for new untracked files"
-      #     git ls-files --others --exclude-standard -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" >> changed_files.txt
-
       - name: Get changed files
         id: changed-files-specific
         uses: tj-actions/changed-files@v44
@@ -85,7 +68,6 @@ jobs:
                 --lang-iso="${VAR_LOKALISE_SOURCE_LANG_ISO}" \
                 --replace-modified \
                 --include-path \
-                --use-automations=true \
                 --distinguish-by-file \
                 --poll \
                 --poll-timeout=120s \
@@ -114,10 +96,9 @@ jobs:
           }
 
           export -f upload_file
-          echo "${ALL_CHANGED_FILES}" | cat -n
           echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           result=$?
-          if [ $result -ne 0 ]; then
+          if [ $result -ne 0]; then
             echo "Error during file upload with exit code $result"
             exit $result
           fi
