@@ -14,3 +14,4 @@ Allow GitHub Actions to create and approve pull requests
 
 
 make sure to assign proper filenames to keys on Lokalise. if your directory in project is locales/%LANG_ISO%/, then the filenames must be locales/%LANG_ISO%/FILENAME
+
