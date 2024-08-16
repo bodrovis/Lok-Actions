@@ -10,12 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      VAR_LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
-      VAR_LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
-      VAR_LOKALISE_SOURCE_LANG_ISO: ${{ vars.LOKALISE_SOURCE_LANG }}
-      VAR_FOLDER_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
-      VAR_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
-      VAR_ADD_CLI_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
+      LOKALISE_SOURCE_LANG: ${{ vars.LOKALISE_SOURCE_LANG }}
+      LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
+      LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -26,7 +23,7 @@ jobs:
         id: changed-files-specific
         uses: tj-actions/changed-files@v44
         with:
-          files: "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}"
+          files: "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}/**.${{ env.LOKALISE_FILE_FORMAT }}"
 
       - name: Check for Changed Files
         if: steps.changed-files-specific.outputs.any_changed == 'false'
@@ -45,6 +42,9 @@ jobs:
       - name: Push Localization Files to Lokalise
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
+          LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
+          LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
+          LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
         run: |
           upload_file() {
             local file=$1
@@ -52,20 +52,20 @@ jobs:
             local max_retries=3
             local sleep_time=1
 
-            # Check if VAR_ADD_CLI_PARAMS is set and not empty
-            if [ -n "${VAR_ADD_CLI_PARAMS}" ]; then
-              additional_params="${VAR_ADD_CLI_PARAMS}"
+            # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
+            if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
+              additional_params="${LOKALISE_CLI_ADD_PARAMS}"
             else
               additional_params=""
             fi
 
             echo "Starting upload for $file"
             while [ $attempt -lt $max_retries ]; do
-              output=$(./bin/lokalise2 --token="${VAR_LOKALISE_API_TOKEN}" \
-                --project-id="${VAR_LOKALISE_PROJECT_ID}" \
+              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
+                --project-id="${LOKALISE_PROJECT_ID}" \
                 file upload \
                 --file="$file" \
-                --lang-iso="${VAR_LOKALISE_SOURCE_LANG_ISO}" \
+                --lang-iso="${LOKALISE_SOURCE_LANG}" \
                 --replace-modified \
                 --include-path \
                 --distinguish-by-file \

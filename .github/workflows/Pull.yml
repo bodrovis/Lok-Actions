@@ -7,24 +7,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PREVIOUS_COMMIT: ${{ github.event.after }}
-      GITHUB_CURRENT_COMMIT: ${{ github.event.before }}
-      VAR_LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
-      VAR_LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
-      VAR_LOKALISE_SOURCE_LANG_ISO: ${{ vars.LOKALISE_SOURCE_LANG }}
-      VAR_LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
-      VAR_LOKALISE_BRANCH_MARKER: ${{ vars.LOKALISE_BRANCH_MARKER }}
-      VAR_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
-      VAR_ADD_CLI_PARAMS: ${{ vars.LOKALISE_PULL_ADDITIONAL_PARAMS }}
+      LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
       GITHUB_BASE_BRANCH_NAME: ${{ github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Create branch name
+        env:
+          LOKALISE_BRANCH_MARKER: ${{ vars.LOKALISE_BRANCH_MARKER }}
         run: |
           SHORT_SHA=${GITHUB_SHA::6}  
-          echo "VAR_LOCALIZATION_BRANCH=${{ env.VAR_LOKALISE_BRANCH_MARKER }}_${{ env.GITHUB_BASE_BRANCH_NAME }}_$SHORT_SHA" >> $GITHUB_ENV
+          echo "VAR_LOCALIZATION_BRANCH=${{ env.LOKALISE_BRANCH_MARKER }}_${{ env.GITHUB_BASE_BRANCH_NAME }}_$SHORT_SHA" >> $GITHUB_ENV
 
       - name: Check if branch exists
         run: |
@@ -44,10 +37,11 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout branch
-        run: git checkout -b "${{ env.VAR_LOCALIZATION_BRANCH}}"
-
       - name: Pull Localization Files from Lokalise
+        env:
+          LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PULL_ADDITIONAL_PARAMS }}
+          LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
+          LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
         run: |
           download_files() {
             local attempt=0
@@ -59,18 +53,18 @@ jobs:
 
               set +e  # Temporarily disable exit on error
 
-              # Check if VAR_ADD_CLI_PARAMS is set and not empty
-              if [ -n "${VAR_ADD_CLI_PARAMS}" ]; then
-                additional_params="${VAR_ADD_CLI_PARAMS}"
+              # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
+              if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
+                additional_params="${LOKALISE_CLI_ADD_PARAMS}"
               else
                 additional_params=""
               fi
 
               # Run the lokalise2 command and capture the output
-              output=$(./bin/lokalise2 --token="${VAR_LOKALISE_API_TOKEN}" \
-                --project-id="${VAR_LOKALISE_PROJECT_ID}" \
+              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
+                --project-id="${LOKALISE_PROJECT_ID}" \
                 file download \
-                --format="${VAR_FILE_FORMAT}" \
+                --format="${LOKALISE_FILE_FORMAT}" \
                 --original-filenames=true \
                 --directory-prefix="/" \
                 --export-sort a_z \
@@ -113,12 +107,15 @@ jobs:
             exit $result
           fi
 
+      - name: Checkout branch
+        run: git checkout -b "${{ env.VAR_LOCALIZATION_BRANCH}}"
+
       - name: Commit to localization branch
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          git add "${{ vars.LOKALISE_TRANSLATIONS_PATH }}/**/*.${{ env.VAR_FILE_FORMAT }}" --force
+          git add "${{ vars.LOKALISE_TRANSLATIONS_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
 
           if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
             echo "No changes to commit"
