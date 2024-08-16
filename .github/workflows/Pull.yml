@@ -12,23 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create branch name
-        env:
-          LOKALISE_BRANCH_MARKER: ${{ vars.LOKALISE_BRANCH_MARKER }}
-        run: |
-          SHORT_SHA=${GITHUB_SHA::6}  
-          echo "VAR_LOCALIZATION_BRANCH=${{ env.LOKALISE_BRANCH_MARKER }}_${{ env.GITHUB_BASE_BRANCH_NAME }}_$SHORT_SHA" >> $GITHUB_ENV
-
-      - name: Check if branch exists
-        run: |
-          git fetch origin
-          if git show-ref --verify --quiet "refs/heads/${{ env.VAR_LOCALIZATION_BRANCH }}"; then
-            echo "Branch ${VAR_LOCALIZATION_BRANCH} already exists. Stopping the action."
-            exit 1
-          else
-            echo "Branch ${VAR_LOCALIZATION_BRANCH} does not exist. Proceeding with the workflow."
-          fi
-
       - name: Install Lokalise CLI
         run: |
           curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
@@ -107,35 +90,44 @@ jobs:
             exit $result
           fi
 
-      - name: Checkout branch
-        run: git checkout -b "${{ env.VAR_LOCALIZATION_BRANCH}}"
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
+            echo "has_changes=false" >> $GITHUB_ENV
+          else
+            echo "has_changes=true" >> $GITHUB_ENV
+          fi
 
-      - name: Commit to localization branch
+      - name: Create Branch (if changes)
+        if: env.has_changes == 'true'
+        id: create_branch
+        env:
+          LOKALISE_BRANCH_MARKER: ${{ vars.LOKALISE_BRANCH_MARKER }}
+        run: |
+          SHORT_SHA=${GITHUB_SHA::6}  
+          BRANCH_NAME="${{ env.LOKALISE_BRANCH_MARKER }}_${{ env.GITHUB_BASE_BRANCH_NAME }}_$SHORT_SHA"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Commit and Push Changes (if changes)
+        if: env.has_changes == 'true'
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
           git add "${{ vars.LOKALISE_TRANSLATIONS_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
+          git commit -m 'Translations update'
+          git push origin "${{ env.branch_name }}"
 
-          if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
-            echo "No changes to commit"
-          else
-            git commit -m 'Translations update'
-            git push origin "${{ env.VAR_LOCALIZATION_BRANCH }}"
-          fi
-
-      - name: Create Pull Request
+      - name: Create Pull Request (if changes)
+        if: env.has_changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-            # Ensure git configuration is correct
-            git config --global user.name "${GITHUB_ACTOR}"
-            git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          gh pr create --base ${{ env.GITHUB_BASE_BRANCH_NAME }} \
+                       --head "${{ env.branch_name }}" \
+                       --title "Lokalise translations update" \
+                       --body ""
 
-            # Create the pull request
-            gh pr create --base ${{ env.GITHUB_BASE_BRANCH_NAME }} \
-                        --head "${{ env.VAR_LOCALIZATION_BRANCH }}" \
-                        --title "Lokalise translations update" \
-                        --body ""
-
-            echo "Pull Request created successfully."
+          echo "Pull Request created successfully."
