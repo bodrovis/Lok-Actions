@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LOKALISE_SOURCE_LANG: ${{ vars.LOKALISE_SOURCE_LANG }}
-      LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
-      LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -22,16 +20,14 @@ jobs:
       - name: Get changed files
         id: changed-files-specific
         uses: tj-actions/changed-files@v44
+        env:
+          LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
+          LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         with:
           files: "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}/**.${{ env.LOKALISE_FILE_FORMAT }}"
 
-      - name: Check for Changed Files
-        if: steps.changed-files-specific.outputs.any_changed == 'false'
-        run: |
-          echo "No files changed."
-          exit 0
-
       - name: Install Lokalise CLI
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
         run: |
           curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
           if [ $? -ne 0 ]; then
@@ -40,6 +36,7 @@ jobs:
           fi
         
       - name: Push Localization Files to Lokalise
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
           LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
