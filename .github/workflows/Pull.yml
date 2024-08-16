@@ -57,8 +57,7 @@ jobs:
             while [ $attempt -lt $max_retries ]; do
               echo "Attempt $((attempt + 1)) of $max_retries"
 
-              # Temporarily disable exit on error
-              set +e
+              set +e  # Temporarily disable exit on error
 
               # Check if VAR_ADD_CLI_PARAMS is set and not empty
               if [ -n "${VAR_ADD_CLI_PARAMS}" ]; then
@@ -81,8 +80,7 @@ jobs:
 
               exit_code=$?
 
-              # Re-enable exit on error
-              set -e
+              set -e  # Re-enable exit on error
 
               # Process the output
               if [ $exit_code -ne 0 ]; then
@@ -117,47 +115,25 @@ jobs:
 
       - name: Commit to localization branch
         run: |
-          echo "Git status before adding files:"
-          git status
-
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          echo "Adding files to staging area:"
           git add "${{ vars.LOKALISE_TRANSLATIONS_PATH }}/**/*.${{ env.VAR_FILE_FORMAT }}" --force
-
-          echo "Git status after adding files:"
-          git status
 
           if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
             echo "No changes to commit"
           else
-            echo "Committing changes"
             git commit -m 'Translations update'
-
-            echo "Git log after commit:"
-            git log -1
-
-            echo "Pushing changes to remote repository"
             git push origin "${{ env.VAR_LOCALIZATION_BRANCH }}"
           fi
 
       - name: Create Pull Request
         run: |
-            echo "Git status before creating PR:"
-            git status
-
-            # Print details of uncommitted changes
-            echo "Uncommitted changes:"
-            git diff --name-only  # Show modified files not yet staged
-            git diff --cached --name-only  # Show staged files
-
             # Ensure git configuration is correct
             git config --global user.name "${GITHUB_ACTOR}"
             git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
             # Create the pull request
-            echo "Creating Pull Request..."
             gh pr create --base ${{ env.GITHUB_BASE_BRANCH_NAME }} \
                         --head "${{ env.VAR_LOCALIZATION_BRANCH }}" \
                         --title "Lokalise translations update" \
