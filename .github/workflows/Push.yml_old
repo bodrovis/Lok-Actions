@@ -22,34 +22,46 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine upstream branch
+        id: determine-branch
+        run: |
+          echo "Starting upstream branch determination"
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            if [[ -n "${{ github.event.pull_request.base.ref }}" ]]; then
+              echo "Pull request base ref is not empty"
+              echo "${{ github.event.pull_request.base.ref }}" > upstream_branch.txt
+            else
+              echo "Pull request base ref is empty, using default branch"
+              echo "${{ github.event.repository.default_branch }}" > upstream_branch.txt
+            fi
+          else
+            echo "Event is not pull_request, using default branch"
+            echo "${{ github.event.repository.default_branch }}" > upstream_branch.txt
+          fi
+          echo "Upstream branch determined"
 
-      # - name: Get changed JSON files
-      #   id: get-changed-files
-      #   run: |
-      #     UPSTREAM_BRANCH=$(cat upstream_branch.txt)
-      #     git fetch origin $UPSTREAM_BRANCH
-      #     if [ "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]; then
-      #       echo "Comparing last two commits on the default branch"
-      #       git diff --name-only HEAD~1 HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
-      #     else
-      #       echo "Comparing branch to upstream branch"
-      #       git diff --name-only origin/$UPSTREAM_BRANCH...HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
-      #     fi
+      - name: Get changed JSON files
+        id: get-changed-files
+        run: |
+          UPSTREAM_BRANCH=$(cat upstream_branch.txt)
+          git fetch origin $UPSTREAM_BRANCH
+          if [ "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]; then
+            echo "Comparing last two commits on the default branch"
+            git diff --name-only HEAD~1 HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
+          else
+            echo "Comparing branch to upstream branch"
+            git diff --name-only origin/$UPSTREAM_BRANCH...HEAD -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" > changed_files.txt
+          fi
 
-      #     echo "Checking for new untracked files"
-      #     git ls-files --others --exclude-standard -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" >> changed_files.txt
-
-      - name: Get changed files
-        id: changed-files-specific
-        uses: tj-actions/changed-files@v44
-        with:
-          files: "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}"
+          echo "Checking for new untracked files"
+          git ls-files --others --exclude-standard -- "${{ env.VAR_FOLDER_PATH }}/${{ env.VAR_LOKALISE_SOURCE_LANG_ISO }}/**.${{ env.VAR_FILE_FORMAT }}" >> changed_files.txt
 
       - name: Check for Changed Files
-        if: steps.changed-files-specific.outputs.any_changed == 'false'
         run: |
-          echo "No files changed."
-          exit 0
+          if [ ! -s changed_files.txt ]; then
+            echo "No files changed."
+            exit 0
+          fi
 
       - name: Install Lokalise CLI
         run: |
@@ -60,8 +72,6 @@ jobs:
           fi
         
       - name: Push Localization Files to Lokalise
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
         run: |
           upload_file() {
             local file=$1
@@ -114,8 +124,8 @@ jobs:
           }
 
           export -f upload_file
-          echo "${ALL_CHANGED_FILES}" | cat -n
-          echo "${ALL_CHANGED_FILES}" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
+
+          cat changed_files.txt | xargs -P 6 -I {} bash -c 'upload_file "{}"'
           result=$?
           if [ $result -ne 0 ]; then
             echo "Error during file upload with exit code $result"
