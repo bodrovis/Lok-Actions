@@ -25,7 +25,6 @@ jobs:
           LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         with:
           files: "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}/**.${{ env.LOKALISE_FILE_FORMAT }}"
-          separator: "\n"
 
       - name: Install Lokalise CLI
         if: steps.changed-files-specific.outputs.any_changed == 'true'
@@ -94,7 +93,7 @@ jobs:
           }
 
           export -f upload_file
-          echo "${ALL_CHANGED_FILES}" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           result=$?
           if [ $result -ne 0 ]; then
             echo "Error during file upload with exit code $result"
