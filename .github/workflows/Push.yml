@@ -115,7 +115,7 @@ jobs:
 
           export -f upload_file
           echo "${ALL_CHANGED_FILES}" | cat -n
-          echo "${ALL_CHANGED_FILES}" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           result=$?
           if [ $result -ne 0 ]; then
             echo "Error during file upload with exit code $result"
