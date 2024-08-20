@@ -34,10 +34,10 @@ jobs:
             echo "IS_DEFAULT_BRANCH=false" >> $GITHUB_ENV
           fi
 
-      - name: Get all changed files between branches
+      - name: Get commit SHA of the upstream branch
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         run: |
-          BASE_SHA="${{ env.GIT_UPSTREAM_BRANCH }}"
+          BASE_SHA=$(git rev-parse origin/${{ env.GIT_UPSTREAM_BRANCH }})
           CURRENT_SHA="${{ github.sha }}"
 
           if [ "$BASE_SHA" = "$CURRENT_SHA" ]; then
@@ -50,7 +50,7 @@ jobs:
             echo "CURRENT_SHA=$CURRENT_SHA" >> $GITHUB_ENV
           fi
 
-      - name: Get all changed files between branches (continued)
+      - name: Get all changed files between branches
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' && env.SKIP_CHANGED_FILES_STEP == 'false' }}
         id: changed-files
         uses: tj-actions/changed-files@v44
@@ -59,9 +59,9 @@ jobs:
           sha: ${{ env.CURRENT_SHA }}
           files: |
             ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
-
+            
       - name: Debug - changed_files.txt
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' && env.SKIP_CHANGED_FILES_STEP == 'false' }}
+        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         run: |
           changed_files="${{ steps.changed-files.outputs.all_changed_files }}"
           echo "$changed_files"
@@ -75,7 +75,7 @@ jobs:
           fi
 
       - name: Ensure Lokalise Branch Exists
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' && env.SKIP_CHANGED_FILES_STEP == 'false' && steps.changed-files.outputs.any_changed == 'true' }}
+        if: ${{ env.IS_DEFAULT_BRANCH == 'false' && steps.changed-files.outputs.any_changed == 'true' }}
         run: |
           # Fetch the list of branches from Lokalise
           LOKALISE_BRANCHES=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
