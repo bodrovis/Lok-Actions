@@ -133,6 +133,9 @@ jobs:
           
           echo "GIT_LOCALIZATION_BRANCH_NAME=$GIT_LOCALIZATION_BRANCH_NAME" >> $GITHUB_ENV
 
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          
           if git show-ref --quiet refs/heads/"$GIT_LOCALIZATION_BRANCH_NAME"; then
             echo "Git Branch $GIT_LOCALIZATION_BRANCH_NAME already exists. Checking out the branch."
             git checkout "$GIT_LOCALIZATION_BRANCH_NAME"
@@ -155,11 +158,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Creating Pull Request..."
-
-          git config --global user.name "${GITHUB_ACTOR}"
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-
           gh pr create --base "${{ github.ref_name }}" \
                       --head "${{ env.GIT_LOCALIZATION_BRANCH_NAME }}" \
                       --title "Lokalise translations update" \
