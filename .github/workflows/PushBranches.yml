@@ -125,7 +125,7 @@ jobs:
         run: |
           if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}"
-            localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
+            localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
           else
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:${{ env.LOKALISE_BRANCH }}"
             localization_files="${{ steps.changed-files.outputs.all_changed_files }}"
