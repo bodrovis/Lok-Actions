@@ -136,11 +136,12 @@ jobs:
 
           upload_file() {
             local file=$1
+            local project_id_with_branch=$2  # Accept project_id_with_branch as a second parameter
             local attempt=0
             local max_retries=3
             local sleep_time=1
 
-            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
+            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$project_id_with_branch"
 
             # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
             if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
@@ -152,7 +153,7 @@ jobs:
             echo "Starting upload for $file"
             while [ $attempt -lt $max_retries ]; do
               output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-                --project-id="$PROJECT_ID_WITH_BRANCH" \
+                --project-id="$project_id_with_branch" \
                 file upload \
                 --file="$file" \
                 --lang-iso="${LOKALISE_SOURCE_LANG_ISO}" \
@@ -188,7 +189,7 @@ jobs:
           export -f upload_file
 
           # Execute uploads in parallel using xargs
-          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
+          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@" "$PROJECT_ID_WITH_BRANCH"' _ {}
           result=$?
           if [ $result -ne 0 ]; then
             echo "Error during file upload with exit code $result"
