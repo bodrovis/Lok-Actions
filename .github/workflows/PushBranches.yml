@@ -161,7 +161,7 @@ jobs:
                 --tag-inserted-keys \
                 --tag-skipped-keys=true \
                 --tag-updated-keys \
-                --tags "${github.ref_name}" \
+                --tags "$GITHUB_REF_NAME" \
                 $additional_params 2>&1)
 
               if echo "$output" | grep -q 'API request error 429'; then
