@@ -15,13 +15,11 @@ jobs:
       LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
 
     steps:
-      # Checkout the repository to the GitHub runner
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch the full history of the repository to ensure all commits are available
+          fetch-depth: 0
 
-      # Check if Triggering Branch is Default Branch
       - name: Check if Triggering Branch is Default Branch
         run: |
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
@@ -59,12 +57,6 @@ jobs:
           sha: ${{ env.CURRENT_SHA }}
           files: |
             ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
-            
-      - name: Debug - changed_files.txt
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
-        run: |
-          changed_files="${{ steps.changed-files.outputs.all_changed_files }}"
-          echo "$changed_files"
 
       - name: Install Lokalise CLI
         if: ${{ env.IS_DEFAULT_BRANCH == 'true' || env.SKIP_CHANGED_FILES_STEP == 'false' }}
@@ -78,21 +70,17 @@ jobs:
       - name: Ensure Lokalise Branch Exists
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' && steps.changed-files.outputs.any_changed == 'true' }}
         run: |
-          # Fetch the list of branches from Lokalise
           LOKALISE_BRANCHES=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
             --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
             branch list)
 
-          # Check if the API request failed
           if echo "$LOKALISE_BRANCHES" | grep -q "API request error"; then
             echo "Error: Failed to retrieve branches from Lokalise. Exiting."
             exit 1
           fi
 
-          # Extract branch names using jq
           LOKALISE_BRANCHES=$(echo "$LOKALISE_BRANCHES" | jq -r '.branches[].name')
 
-          # Determine if the branch exists
           if echo "$LOKALISE_BRANCHES" | grep -qw "${{ github.ref_name }}"; then
             echo "Branch '${{ github.ref_name }}' exists in Lokalise. Continuing on Lokalise branch."
             LOKALISE_BRANCH="${{ github.ref_name }}"
@@ -100,13 +88,11 @@ jobs:
             echo "Branch '${{ github.ref_name }}' does not exist in Lokalise. Creating a new branch in Lokalise."
             LOKALISE_BRANCH="${{ github.ref_name }}"
 
-            # Create a new branch in Lokalise
             RESPONSE=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
               --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
               branch create \
               --name "$LOKALISE_BRANCH")
 
-            # Check if the branch creation was successful
             if echo "$RESPONSE" | grep -q "API request error"; then
               echo "Error: Failed to create branch in Lokalise."
               exit 1
@@ -115,7 +101,6 @@ jobs:
             fi
           fi
 
-          # Export the branch name to the environment
           echo "LOKALISE_BRANCH=$LOKALISE_BRANCH" >> $GITHUB_ENV
 
       - name: Push files to Lokalise
@@ -137,19 +122,13 @@ jobs:
             exit 0
           fi
 
-          echo "PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
-          echo "Files to push to Lokalise:"
-          echo "$localization_files"
-
-          export PROJECT_ID_WITH_BRANCH  # Export the variable to make sure it's available in the subshell
+          export PROJECT_ID_WITH_BRANCH
 
           upload_file() {
             local file=$1
             local attempt=0
             local max_retries=3
             local sleep_time=1
-
-            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
 
             if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
               additional_params="${LOKALISE_CLI_ADD_PARAMS}"
