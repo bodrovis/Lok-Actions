@@ -101,100 +101,93 @@ jobs:
           # Export the branch name to the environment
           echo "LOKALISE_BRANCH=$LOKALISE_BRANCH" >> $GITHUB_ENV
 
+      - name: Push files to Lokalise
+        env:
+          LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
+        run: |
+          if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
+            # Default branch case, do not include branch in project ID
+            PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}"
 
-      # - name: Push files to Lokalise
-      #   env:
-      #     LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
-      #     
-      #   run: |
-      #     if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
-      #       # Default branch case, do not include branch in project ID
-      #       PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}"
+            # Find all relevant localization files using parameters
+            localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
+          else
+            echo "Send files to Lokalise branch: ${{ env.LOKALISE_BRANCH }}"
 
-      #       # Find all relevant localization files using parameters
-      #       localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
-      #     else
-      #       # Fetch the branch name from lokalise_branch.txt
-      #       LOKALISE_BRANCH=$(cat lokalise_branch.txt)
+            # Feature branch case, include branch in project ID
+            PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:${{ env.LOKALISE_BRANCH }}"
 
-      #       echo "Send files to Lokalise branch: $LOKALISE_BRANCH"
+            # Use the files output from the changed-files step
+            localization_files="${{ steps.changed-files.outputs.all_changed_files }}"
 
-      #       # Feature branch case, include branch in project ID
-      #       PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:$LOKALISE_BRANCH"
+            # Convert space-separated list to newline-separated list for consistent processing
+            localization_files=$(echo "$localization_files" | tr ' ' '\n')
+          fi
 
-      #       # Read changed files from changed_files.txt using parameters
-      #       if [ -f changed_files.txt ]; then
-      #         localization_files=$(cat changed_files.txt | grep -E "^${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/.*\.${{ env.LOKALISE_FILE_FORMAT }}$")
-      #       else
-      #         echo "No changed_files.txt file found. Exiting."
-      #         exit 1
-      #       fi
-      #     fi
+          # Check if localization_files is empty
+          if [ -z "$localization_files" ]; then
+            echo "No localization files found to upload. Exiting."
+            exit 0
+          fi
 
-      #     # Check if localization_files is empty
-      #     if [ -z "$localization_files" ]; then
-      #       echo "No localization files found to upload. Exiting."
-      #       exit 0
-      #     fi
+          echo "Files to push to Lokalise:"
+          echo "$localization_files"
 
-      #     echo "Files to push to Lokalise:"
-      #     echo "$localization_files"
+          upload_file() {
+            local file=$1
+            local attempt=0
+            local max_retries=3
+            local sleep_time=1
 
-      #     upload_file() {
-      #       local file=$1
-      #       local attempt=0
-      #       local max_retries=3
-      #       local sleep_time=1
+            # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
+            if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
+              additional_params="${LOKALISE_CLI_ADD_PARAMS}"
+            else
+              additional_params=""
+            fi
 
-      #       # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
-      #       if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
-      #         additional_params="${LOKALISE_CLI_ADD_PARAMS}"
-      #       else
-      #         additional_params=""
-      #       fi
+            echo "Starting upload for $file"
+            while [ $attempt -lt $max_retries ]; do
+              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
+                --project-id="$PROJECT_ID_WITH_BRANCH" \
+                file upload \
+                --file="$file" \
+                --lang-iso="${LOKALISE_SOURCE_LANG_ISO}" \
+                --replace-modified \
+                --include-path \
+                --distinguish-by-file \
+                --poll \
+                --poll-timeout=120s \
+                --tag-inserted-keys \
+                --tag-skipped-keys=true \
+                --tag-updated-keys \
+                --tags "${github.ref_name}" \
+                $additional_params 2>&1)
 
-      #       echo "Starting upload for $file"
-      #       while [ $attempt -lt $max_retries ]; do
-      #         output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-      #           --project-id="$PROJECT_ID_WITH_BRANCH" \
-      #           file upload \
-      #           --file="$file" \
-      #           --lang-iso="${LOKALISE_SOURCE_LANG_ISO}" \
-      #           --replace-modified \
-      #           --include-path \
-      #           --distinguish-by-file \
-      #           --poll \
-      #           --poll-timeout=120s \
-      #           --tag-inserted-keys \
-      #           --tag-skipped-keys=true \
-      #           --tag-updated-keys \
-      #           --tags "${github.ref_name}" \
-      #           $additional_params 2>&1)
+              if echo "$output" | grep -q 'API request error 429'; then
+                attempt=$((attempt + 1))
+                echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
+                sleep $sleep_time
+                sleep_time=$((sleep_time * 2))
+              elif echo "$output" | grep -q 'API request error'; then
+                echo "Permanent error encountered during upload: $output"
+                return 1
+              else
+                echo "Successfully uploaded file: $file"
+                return 0
+              fi
+            done
 
-      #         if echo "$output" | grep -q 'API request error 429'; then
-      #           attempt=$((attempt + 1))
-      #           echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
-      #           sleep $sleep_time
-      #           sleep_time=$((sleep_time * 2))
-      #         elif echo "$output" | grep -q 'API request error'; then
-      #           echo "Permanent error encountered during upload: $output"
-      #           return 1
-      #         else
-      #           echo "Successfully uploaded file: $file"
-      #           return 0
-      #         fi
-      #       done
+            echo "Failed to upload file: $file after $max_retries attempts"
+            return 1
+          }
 
-      #       echo "Failed to upload file: $file after $max_retries attempts"
-      #       return 1
-      #     }
+          export -f upload_file
 
-      #     export -f upload_file
-
-      #     # Execute uploads in parallel using xargs
-      #     echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
-      #     result=$?
-      #     if [ $result -ne 0 ]; then
-      #       echo "Error during file upload with exit code $result"
-      #       exit $result
-      #     fi
+          # Execute uploads in parallel using xargs
+          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
+          result=$?
+          if [ $result -ne 0 ]; then
+            echo "Error during file upload with exit code $result"
+            exit $result
+          fi
