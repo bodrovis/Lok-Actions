@@ -130,7 +130,7 @@ jobs:
             exit 0
           fi
 
-          echo "$PROJECT_ID_WITH_BRANCH"
+          echo "PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
           echo "Files to push to Lokalise:"
           echo "$localization_files"
 
@@ -139,6 +139,8 @@ jobs:
             local attempt=0
             local max_retries=3
             local sleep_time=1
+
+            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
 
             # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
             if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
