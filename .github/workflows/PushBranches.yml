@@ -106,25 +106,14 @@ jobs:
           LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
         run: |
           if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
-            # Default branch case, do not include branch in project ID
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}"
-
-            # Find all relevant localization files using parameters
             localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
           else
-            echo "Send files to Lokalise branch: ${{ env.LOKALISE_BRANCH }}"
-
-            # Feature branch case, include branch in project ID
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:${{ env.LOKALISE_BRANCH }}"
-
-            # Use the files output from the changed-files step
             localization_files="${{ steps.changed-files.outputs.all_changed_files }}"
-
-            # Convert space-separated list to newline-separated list for consistent processing
             localization_files=$(echo "$localization_files" | tr ' ' '\n')
           fi
 
-          # Check if localization_files is empty
           if [ -z "$localization_files" ]; then
             echo "No localization files found to upload. Exiting."
             exit 0
@@ -134,16 +123,16 @@ jobs:
           echo "Files to push to Lokalise:"
           echo "$localization_files"
 
+          export PROJECT_ID_WITH_BRANCH  # Export the variable to make sure it's available in the subshell
+
           upload_file() {
             local file=$1
-            local project_id_with_branch=$2  # Accept project_id_with_branch as a second parameter
             local attempt=0
             local max_retries=3
             local sleep_time=1
 
-            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$project_id_with_branch"
+            echo "Inside upload_file function - PROJECT_ID_WITH_BRANCH=$PROJECT_ID_WITH_BRANCH"
 
-            # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
             if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
               additional_params="${LOKALISE_CLI_ADD_PARAMS}"
             else
@@ -153,7 +142,7 @@ jobs:
             echo "Starting upload for $file"
             while [ $attempt -lt $max_retries ]; do
               output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-                --project-id="$project_id_with_branch" \
+                --project-id="$PROJECT_ID_WITH_BRANCH" \
                 file upload \
                 --file="$file" \
                 --lang-iso="${LOKALISE_SOURCE_LANG_ISO}" \
@@ -188,8 +177,7 @@ jobs:
 
           export -f upload_file
 
-          # Execute uploads in parallel using xargs
-          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@" "$PROJECT_ID_WITH_BRANCH"' _ {}
+          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           result=$?
           if [ $result -ne 0 ]; then
             echo "Error during file upload with exit code $result"
