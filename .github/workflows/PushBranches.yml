@@ -67,6 +67,7 @@ jobs:
           echo "$changed_files"
 
       - name: Install Lokalise CLI
+        if: ${{ env.IS_DEFAULT_BRANCH == 'true' || env.SKIP_CHANGED_FILES_STEP == 'false' }}
         run: |
           curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
           if [ $? -ne 0 ]; then
@@ -118,6 +119,7 @@ jobs:
           echo "LOKALISE_BRANCH=$LOKALISE_BRANCH" >> $GITHUB_ENV
 
       - name: Push files to Lokalise
+        if: ${{ env.IS_DEFAULT_BRANCH == 'true' || steps.changed-files.outputs.any_changed == 'true' }}
         env:
           LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
         run: |
