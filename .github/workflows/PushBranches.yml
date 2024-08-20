@@ -42,12 +42,18 @@ jobs:
             exit 1
           fi
 
+      # Fetch the upstream branch to ensure it is available locally
+      - name: Fetch upstream branch
+        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
+        run: |
+          git fetch origin ${{ env.GIT_UPSTREAM_BRANCH }}
+
       - name: Get all changed files between branches
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         id: changed-files
         uses: tj-actions/changed-files@v44
         with:
-          base_sha: ${{ env.GIT_UPSTREAM_BRANCH }}  # Compare against the upstream branch
+          base_sha: origin/${{ env.GIT_UPSTREAM_BRANCH }}
           sha: ${{ github.sha }}
           files: |
             ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
