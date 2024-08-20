@@ -112,11 +112,13 @@ jobs:
 
       - name: Commit and Push Changes (if changes)
         if: env.has_changes == 'true'
+        env:
+          LOKALISE_FOLDER_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          git add "${{ vars.LOKALISE_TRANSLATIONS_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
+          git add "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
           git commit -m 'Translations update'
           git push origin "${{ env.branch_name }}"
 
