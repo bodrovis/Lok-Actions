@@ -13,6 +13,7 @@ jobs:
       LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
       GIT_BRANCH_NAME: ${{ github.ref_name }}
       GIT_UPSTREAM_BRANCH: ${{ vars.GIT_UPSTREAM_BRANCH }}
+      LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
 
     steps:
       # Checkout the repository to the GitHub runner
@@ -147,7 +148,7 @@ jobs:
       # - name: Push files to Lokalise
       #   env:
       #     LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
-      #     LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
+      #     
       #   run: |
       #     if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
       #       # Default branch case, do not include branch in project ID
