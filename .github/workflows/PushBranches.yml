@@ -43,26 +43,26 @@ jobs:
             exit 1
           fi
 
-      # Fetch the upstream branch to ensure it is available locally
-      - name: Fetch upstream branch
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
-        run: |
-          git fetch origin ${{ env.GIT_UPSTREAM_BRANCH }}
+      # # Fetch the upstream branch to ensure it is available locally
+      # - name: Fetch upstream branch
+      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
+      #   run: |
+      #     git fetch origin ${{ env.GIT_UPSTREAM_BRANCH }}
 
-      # Determine the correct base SHA for comparison
-      - name: Determine base SHA for comparison
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
-        run: |
-          BASE_SHA=$(git merge-base origin/${{ env.GIT_UPSTREAM_BRANCH }} HEAD)
-          echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
+      # # Determine the correct base SHA for comparison
+      # - name: Determine base SHA for comparison
+      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
+      #   run: |
+      #     BASE_SHA=$(git merge-base origin/${{ env.GIT_UPSTREAM_BRANCH }} HEAD)
+      #     echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
 
-      # Get all changed files between the upstream branch and the current branch
+      # # Get all changed files between the upstream branch and the current branch
       - name: Get all changed files between branches
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         id: changed-files
         uses: tj-actions/changed-files@v44
         with:
-          base_sha: ${{ env.BASE_SHA }}  # Use the calculated base SHA
+          base_sha: ${{ env.GIT_UPSTREAM_BRANCH }}
           sha: ${{ github.sha }}  # The current commit on the branch that triggered the workflow
           files: |
             ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
