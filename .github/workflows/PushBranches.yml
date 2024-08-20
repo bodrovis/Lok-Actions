@@ -130,6 +130,7 @@ jobs:
             exit 0
           fi
 
+          echo "$PROJECT_ID_WITH_BRANCH"
           echo "Files to push to Lokalise:"
           echo "$localization_files"
 
