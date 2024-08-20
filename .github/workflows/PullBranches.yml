@@ -174,7 +174,6 @@ jobs:
 
 
       - name: Create Pull Request
-        if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
