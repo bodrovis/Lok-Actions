@@ -11,7 +11,6 @@ jobs:
       LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
       LOKALISE_SOURCE_LANG_ISO: ${{ vars.LOKALISE_SOURCE_LANG }}
       LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
-      GIT_BRANCH_NAME: ${{ github.ref_name }}
       GIT_UPSTREAM_BRANCH: ${{ vars.GIT_UPSTREAM_BRANCH }}
       LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
 
@@ -35,28 +34,6 @@ jobs:
             echo "IS_DEFAULT_BRANCH=false" >> $GITHUB_ENV
           fi
 
-      - name: Install Lokalise CLI
-        run: |
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
-          if [ $? -ne 0 ]; then
-            echo "Failed to install Lokalise CLI"
-            exit 1
-          fi
-
-      # # Fetch the upstream branch to ensure it is available locally
-      # - name: Fetch upstream branch
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
-      #   run: |
-      #     git fetch origin ${{ env.GIT_UPSTREAM_BRANCH }}
-
-      # # Determine the correct base SHA for comparison
-      # - name: Determine base SHA for comparison
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
-      #   run: |
-      #     BASE_SHA=$(git merge-base origin/${{ env.GIT_UPSTREAM_BRANCH }} HEAD)
-      #     echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
-
-      # # Get all changed files between the upstream branch and the current branch
       - name: Get all changed files between branches
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}
         id: changed-files
@@ -73,77 +50,57 @@ jobs:
           changed_files="${{ steps.changed-files.outputs.all_changed_files }}"
           echo "$changed_files"
 
-      # # Lokalise Branching
-      # - name: List Lokalise Branches
-      #   id: lokalise_branches
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}  # Only run if IS_DEFAULT_BRANCH is false 
-      #   run: |
-      #     LOKALISE_BRANCHES=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
-      #     --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
-      #     branch list | jq -r '.branches[].name')
-          
-      #     echo -e "Lokalise branches:\n$LOKALISE_BRANCHES"
-      #     echo "$LOKALISE_BRANCHES" > lokalise_branches.txt
+      - name: Install Lokalise CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
+          if [ $? -ne 0 ]; then
+            echo "Failed to install Lokalise CLI"
+            exit 1
+          fi
 
-      # # Compare Lokalise Branch names to Git Triggering Branch
-      # - name: Compare Lokalise Branch names to Git Triggering Branch
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}  # Only run if IS_DEFAULT_BRANCH is false 
-      #   run: |
-      #     LOKALISE_BRANCHES=$(cat lokalise_branches.txt)  # Read the contents of the file into the LOKALISE_BRANCHES variable
+      - name: Ensure Lokalise Branch Exists
+        if: ${{ env.IS_DEFAULT_BRANCH == 'false' && steps.changed-files.outputs.any_changed == 'true' }}
+        run: |
+          # Fetch the list of branches from Lokalise
+          LOKALISE_BRANCHES=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
+            --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
+            branch list)
 
-      #     if echo "$LOKALISE_BRANCHES" | grep -qw "${{ env.GIT_BRANCH_NAME }}"; then
-      #       echo "Branch "${{ env.GIT_BRANCH_NAME }}" exists in Lokalise. Continuing on Lokalise branch."
-      #       LOKALISE_BRANCH="${{ env.GIT_BRANCH_NAME }}"
-      #       echo "$LOKALISE_BRANCH" > lokalise_branch.txt
-      #       echo "CREATE_LOKALISE_BRANCH=false" >> $GITHUB_ENV
-      #     else
-      #       echo "Branch "${{ env.GIT_BRANCH_NAME }}" does not exist in Lokalise. Will create a branch in Lokalise."
-      #       LOKALISE_BRANCH="${{ env.GIT_BRANCH_NAME }}"
-      #       echo "$LOKALISE_BRANCH" > lokalise_branch.txt
-      #       echo "CREATE_LOKALISE_BRANCH=true" >> $GITHUB_ENV
-      #     fi
+          # Check if the API request failed
+          if echo "$LOKALISE_BRANCHES" | grep -q "API request error"; then
+            echo "Error: Failed to retrieve branches from Lokalise. Exiting."
+            exit 1
+          fi
 
-      # # Debug CREATE_LOKALISE_BRANCH
-      # - name: Debug CREATE_LOKALISE_BRANCH
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}  # Only run if IS_DEFAULT_BRANCH is false 
-      #   run: |
-      #     echo "Value of CREATE_LOKALISE_BRANCH:"
-      #     echo "${{ env.CREATE_LOKALISE_BRANCH }}"
-      
-      #     # Debug LOKALISE_BRANCH 
+          # Extract branch names using jq
+          LOKALISE_BRANCHES=$(echo "$LOKALISE_BRANCHES" | jq -r '.branches[].name')
 
-      # - name: Debug LOKALISE_BRANCH
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' }}  # Only run if IS_DEFAULT_BRANCH is false 
-      #   run: |
-      #     echo "Value of LOKALISE_BRANCH:"
-      #     if [ -f lokalise_branch.txt ]; then
-      #       LOKALISE_BRANCH=$(cat lokalise_branch.txt)
-      #       echo "$LOKALISE_BRANCH"
-      #     else
-      #       echo "lokalise_branch.txt not found."
-      #     fi
+          # Determine if the branch exists
+          if echo "$LOKALISE_BRANCHES" | grep -qw "${{ github.ref_name }}"; then
+            echo "Branch '${{ github.ref_name }}' exists in Lokalise. Continuing on Lokalise branch."
+            LOKALISE_BRANCH="${{ github.ref_name }}"
+          else
+            echo "Branch '${{ github.ref_name }}' does not exist in Lokalise. Creating a new branch in Lokalise."
+            LOKALISE_BRANCH="${{ github.ref_name }}"
 
-      # # Create a new branch in Lokalise if it doesn't exist
-      # - name: Create Lokalise Branch
-      #   if: ${{ env.IS_DEFAULT_BRANCH == 'false' && env.CREATE_LOKALISE_BRANCH == 'true' }}  # Only run if IS_DEFAULT_BRANCH is false AND if Lokalise Branch does not exist
-      #   run: |
-      #     # Fetch the branch name from lokalise_branch.txt
-      #     LOKALISE_BRANCH=$(cat lokalise_branch.txt)
+            # Create a new branch in Lokalise
+            RESPONSE=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
+              --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
+              branch create \
+              --name "$LOKALISE_BRANCH")
 
-      #     # Create a new branch in Lokalise using the fetched branch name and capture the HTTP response
-      #     ./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
-      #     --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
-      #     branch create \
-      #     --name "$LOKALISE_BRANCH"
+            # Check if the branch creation was successful
+            if echo "$RESPONSE" | grep -q "API request error"; then
+              echo "Error: Failed to create branch in Lokalise."
+              exit 1
+            else
+              echo "Branch created successfully in Lokalise."
+            fi
+          fi
 
-      #     # Check if the API response contains a 200 status
-      #     HTTP_STATUS=$(echo "$RESPONSE" | jq -r '.status_code')
-      #     if [ "$HTTP_STATUS" -ne 200 ]; then
-      #       echo "Error: Failed to create branch in Lokalise. HTTP Status: $HTTP_STATUS"
-      #       exit 1
-      #     else
-      #       echo "Branch created successfully in Lokalise. HTTP Status: $HTTP_STATUS"
-      #     fi
+          # Export the branch name to the environment
+          echo "LOKALISE_BRANCH=$LOKALISE_BRANCH" >> $GITHUB_ENV
+
 
       # - name: Push files to Lokalise
       #   env:
@@ -211,7 +168,7 @@ jobs:
       #           --tag-inserted-keys \
       #           --tag-skipped-keys=true \
       #           --tag-updated-keys \
-      #           --tags "${GIT_BRANCH_NAME}" \
+      #           --tags "${github.ref_name}" \
       #           $additional_params 2>&1)
 
       #         if echo "$output" | grep -q 'API request error 429'; then
