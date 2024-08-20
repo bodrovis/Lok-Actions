@@ -112,6 +112,8 @@ jobs:
             exit $result
           fi
 
+          git status
+
           echo "Checking for unstaged changes..."
           if [[ -n $(git status --untracked-files=no --porcelain) ]]; then
             echo "Changes detected."
