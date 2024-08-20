@@ -151,7 +151,7 @@ jobs:
           git commit -m 'Translations update'
 
           echo "Pushing changes to remote repository..."
-          git push origin "${{ env.GIT_LOCALIZATION_BRANCH_NAME }}"
+          git push origin "$GIT_LOCALIZATION_BRANCH_NAME"
 
       - name: Create Pull Request if changes detected
         if: ${{ env.CHANGES_DETECTED == 'true' }}
@@ -159,7 +159,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create --base "${{ github.ref_name }}" \
-                      --head "${{ env.GIT_LOCALIZATION_BRANCH_NAME }}" \
+                      --head "$GIT_LOCALIZATION_BRANCH_NAME" \
                       --title "Lokalise translations update" \
                       --body ""
 
