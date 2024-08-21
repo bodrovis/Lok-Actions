@@ -35,6 +35,9 @@ jobs:
             echo "Lokalise CLI already installed, skipping installation."
           fi
         
+      - name: Set Executable Permissions for Scripts
+        run: chmod +x .github/scripts/lokalise_upload.sh
+
       - name: Push Localization Files to Lokalise
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         env:
