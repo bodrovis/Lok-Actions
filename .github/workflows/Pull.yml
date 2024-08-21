@@ -69,7 +69,7 @@ jobs:
         
           git add "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
           git commit -m 'Translations update'
-          git push origin "${{ env.branch_name }}"
+          git push origin "$BRANCH_NAME"
 
       - name: Create Pull Request
         if: env.has_changes == 'true'
