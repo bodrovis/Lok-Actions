@@ -45,7 +45,7 @@ jobs:
         run: |
           chmod +x .github/scripts/lokalise_upload.sh
 
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG_ISO"
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG"
 
           if [ $? -ne 0 ]; then
             echo "File upload failed"
