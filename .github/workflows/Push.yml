@@ -35,9 +35,6 @@ jobs:
             echo "Lokalise CLI already installed, skipping installation."
           fi
         
-      - name: Set Executable Permissions for Scripts
-        run: chmod +x .github/scripts/lokalise_upload.sh
-
       - name: Push Localization Files to Lokalise
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         env:
@@ -46,9 +43,9 @@ jobs:
           LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
           LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
         run: |
-          ./.github/scripts/lokalise_upload.sh
-          
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG_ISO"
+          chmod +x .github/scripts/lokalise_upload.sh
+
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG_ISO"
 
           if [ $? -ne 0 ]; then
             echo "File upload failed"
