@@ -2,19 +2,6 @@
 
 Push and pull are currently supported through tags and Lokalise branches. Use with "Web and mobile" projects to easily exchange your content.
 
-## Table of Contents
-
-- [Setup](#setup)
-  - [Lokalise API token](#lokalise-api-token)
-  - [Mandatory workflow parameters](#mandatory-workflow-parameters)
-  - [Optional workflow parameters](#optional-workflow-parameters)
-  - [Setting up permissions](#setting-up-permissions)
-- [Running the workflows](#running-the-workflows)
-- [Assumptions and defaults](#assumptions-and-defaults)
-  - [Translation files](#translation-files)
-  - [Default parameters for the push action](#default-parameters-for-the-push-action)
-  - [Default parameters for the pull action](#default-parameters-for-the-pull-action)
-
 ## Setup
 
 ### Lokalise API token
