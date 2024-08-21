@@ -111,7 +111,7 @@ jobs:
 
           chmod +x .github/scripts/lokalise_upload.sh
 
-          echo "$localization_files" | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$PROJECT_ID_WITH_BRANCH" "$LOKALISE_SOURCE_LANG_ISO"
+          echo "$localization_files" | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$PROJECT_ID_WITH_BRANCH" "$LOKALISE_SOURCE_LANG"
 
           if [ $? -ne 0 ]; then
             echo "File upload failed"
