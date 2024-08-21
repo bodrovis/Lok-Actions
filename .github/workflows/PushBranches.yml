@@ -9,7 +9,7 @@ jobs:
     env:
       LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
       LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
-      LOKALISE_SOURCE_LANG_ISO: ${{ vars.LOKALISE_SOURCE_LANG }}
+      LOKALISE_SOURCE_LANG: ${{ vars.LOKALISE_SOURCE_LANG }}
       LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
       GIT_UPSTREAM_BRANCH: ${{ vars.GIT_UPSTREAM_BRANCH }}
       LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
@@ -54,7 +54,7 @@ jobs:
           base_sha: ${{ env.BASE_SHA }}
           sha: ${{ env.CURRENT_SHA }}
           files: |
-            ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
+            ${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}
 
       - name: Install Lokalise CLI
         if: ${{ env.IS_DEFAULT_BRANCH == 'true' || env.SKIP_CHANGED_FILES_STEP == 'false' }}
@@ -98,7 +98,7 @@ jobs:
         run: |
           if [ "${{ env.IS_DEFAULT_BRANCH }}" = "true" ]; then
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}"
-            localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
+            localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
           else
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:${{ env.LOKALISE_BRANCH }}"
             localization_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr ' ' '\n')
@@ -109,54 +109,10 @@ jobs:
             exit 0
           fi
 
-          export PROJECT_ID_WITH_BRANCH
+          chmod +x .github/scripts/lokalise_upload.sh
 
-          upload_file() {
-            local file=$1
-            local attempt=0
-            local max_retries=3
-            local sleep_time=1
-            local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
-            
-            echo "Starting upload for $file"
-            while [ $attempt -lt $max_retries ]; do
-              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-                --project-id="$PROJECT_ID_WITH_BRANCH" \
-                file upload \
-                --file="$file" \
-                --lang-iso="${LOKALISE_SOURCE_LANG_ISO}" \
-                --replace-modified \
-                --include-path \
-                --distinguish-by-file \
-                --poll \
-                --poll-timeout=120s \
-                --tag-inserted-keys \
-                --tag-skipped-keys=true \
-                --tag-updated-keys \
-                --tags "$GITHUB_REF_NAME" \
-                $additional_params 2>&1)
+          echo "$localization_files" | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$PROJECT_ID_WITH_BRANCH" "$LOKALISE_SOURCE_LANG_ISO"
 
-              if [ $? -eq 0 ]; then
-                echo "Successfully uploaded $file"
-                return 0
-              elif echo "$output" | grep -q 'API request error 429'; then
-                attempt=$((attempt + 1))
-                echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
-                sleep $sleep_time
-                sleep_time=$((sleep_time * 2))
-              else
-                echo "Error: $output"
-                return 1
-              fi
-            done
-
-            echo "Failed to upload file: $file after $max_retries attempts"
-            return 1
-          }
-
-          export -f upload_file
-
-          echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           if [ $? -ne 0 ]; then
             echo "File upload failed"
             exit 1
