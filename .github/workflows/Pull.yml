@@ -28,54 +28,9 @@ jobs:
           LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
           LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
         run: |
-          download_files() {
-            local attempt=0
-            local max_retries=3
-            local sleep_time=1
-            local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
+          chmod +x .github/scripts/lokalise_download.sh
 
-            while [ $attempt -lt $max_retries ]; do
-              echo "Attempt $((attempt + 1)) of $max_retries"
-
-              set +e  # Temporarily disable exit on error
-
-              # Run the lokalise2 command and capture the output
-              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-                --project-id="${LOKALISE_PROJECT_ID}" \
-                file download \
-                --format="${LOKALISE_FILE_FORMAT}" \
-                --original-filenames=true \
-                --directory-prefix="/" \
-                --export-sort a_z \
-                --filter-data=translated \
-                --include-tags="${GITHUB_REF_NAME}" \
-                $additional_params 2>&1)
-
-              exit_code=$?
-
-              set -e  # Re-enable exit on error
-
-              if [ $exit_code -eq 0 ]; then
-                echo "Successfully downloaded files"
-                return 0
-              fi
-
-              if echo "$output" | grep -q 'API request error 429'; then
-                attempt=$((attempt + 1))
-                echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
-                sleep $sleep_time
-                sleep_time=$((sleep_time * 2))
-              else
-                echo "Error encountered during download: $output"
-                return 1
-              fi
-            done
-
-            echo "Failed to download files after $max_retries attempts"
-            return 1
-          }
-
-          if ! download_files; then
+          if ! ./.github/scripts/lokalise_download.sh "$LOKALISE_PROJECT_ID"; then
             echo "Error during file download"
             exit 1
           fi
