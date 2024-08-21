@@ -23,11 +23,9 @@ jobs:
       - name: Check if Triggering Branch is Default Branch
         run: |
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            echo "The Git default branch triggered this workflow."
             echo "LOKALISE_BRANCH=master" >> $GITHUB_ENV
             echo "IS_DEFAULT_BRANCH=true" >> $GITHUB_ENV
           else
-            echo "A Git feature branch triggered this workflow."
             echo "LOKALISE_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
             echo "IS_DEFAULT_BRANCH=false" >> $GITHUB_ENV
           fi
@@ -39,7 +37,7 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
 
           if [ "$BASE_SHA" = "$CURRENT_SHA" ]; then
-            echo "Identical commit hashes detected for base and current SHA. No changes detected."
+            echo "No changes detected between the base and current SHA."
             echo "SKIP_CHANGED_FILES_STEP=true" >> $GITHUB_ENV
             exit 0
           else
@@ -74,34 +72,21 @@ jobs:
         if: ${{ env.IS_DEFAULT_BRANCH == 'false' && steps.changed-files.outputs.any_changed == 'true' }}
         run: |
           LOKALISE_BRANCHES=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
-            --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
-            branch list)
+            --project-id="${{ env.LOKALISE_PROJECT_ID }}" branch list | jq -r '.branches[].name')
 
-          if echo "$LOKALISE_BRANCHES" | grep -q "API request error"; then
-            echo "Error: Failed to retrieve branches from Lokalise. Exiting."
-            exit 1
-          fi
-
-          LOKALISE_BRANCHES=$(echo "$LOKALISE_BRANCHES" | jq -r '.branches[].name')
-
-          if echo "$LOKALISE_BRANCHES" | grep -qw "${{ github.ref_name }}"; then
-            echo "Branch '${{ github.ref_name }}' exists in Lokalise. Continuing on Lokalise branch."
-            LOKALISE_BRANCH="${{ github.ref_name }}"
+          if echo "$LOKALISE_BRANCHES" | grep -qw "${{ env.LOKALISE_BRANCH }}"; then
+            echo "Branch '${{ env.LOKALISE_BRANCH }}' exists in Lokalise."
           else
-            echo "Branch '${{ github.ref_name }}' does not exist in Lokalise. Creating a new branch in Lokalise."
-            LOKALISE_BRANCH="${{ github.ref_name }}"
-
-            RESPONSE=$(./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
+            echo "Branch '${{ env.LOKALISE_BRANCH }}' does not exist. Creating it now."
+            
+            ./bin/lokalise2 --token="${{ env.LOKALISE_API_TOKEN }}" \
               --project-id="${{ env.LOKALISE_PROJECT_ID }}" \
-              branch create \
-              --name "$LOKALISE_BRANCH")
-
-            if echo "$RESPONSE" | grep -q "API request error"; then
-              echo "Error: Failed to create branch in Lokalise."
-              exit 1
-            else
-              echo "Branch created successfully in Lokalise."
-            fi
+              branch create --name "${{ env.LOKALISE_BRANCH }}" || {
+                echo "Failed to create branch in Lokalise."
+                exit 1
+              }
+            
+            echo "Branch '${{ env.LOKALISE_BRANCH }}' created successfully."
           fi
 
           echo "LOKALISE_BRANCH=$LOKALISE_BRANCH" >> $GITHUB_ENV
@@ -116,8 +101,7 @@ jobs:
             localization_files=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}" -type f -name "*.${{ env.LOKALISE_FILE_FORMAT }}")
           else
             PROJECT_ID_WITH_BRANCH="${{ env.LOKALISE_PROJECT_ID }}:${{ env.LOKALISE_BRANCH }}"
-            localization_files="${{ steps.changed-files.outputs.all_changed_files }}"
-            localization_files=$(echo "$localization_files" | tr ' ' '\n')
+            localization_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr ' ' '\n')
           fi
 
           if [ -z "$localization_files" ]; then
@@ -132,13 +116,8 @@ jobs:
             local attempt=0
             local max_retries=3
             local sleep_time=1
-
-            if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
-              additional_params="${LOKALISE_CLI_ADD_PARAMS}"
-            else
-              additional_params=""
-            fi
-
+            local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
+            
             echo "Starting upload for $file"
             while [ $attempt -lt $max_retries ]; do
               output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
@@ -157,17 +136,17 @@ jobs:
                 --tags "$GITHUB_REF_NAME" \
                 $additional_params 2>&1)
 
-              if echo "$output" | grep -q 'API request error 429'; then
+              if [ $? -eq 0 ]; then
+                echo "Successfully uploaded $file"
+                return 0
+              elif echo "$output" | grep -q 'API request error 429'; then
                 attempt=$((attempt + 1))
                 echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
                 sleep $sleep_time
                 sleep_time=$((sleep_time * 2))
-              elif echo "$output" | grep -q 'API request error'; then
-                echo "Permanent error encountered during upload: $output"
-                return 1
               else
-                echo "Successfully uploaded file: $file"
-                return 0
+                echo "Error: $output"
+                return 1
               fi
             done
 
@@ -178,8 +157,7 @@ jobs:
           export -f upload_file
 
           echo "$localization_files" | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
-          result=$?
-          if [ $result -ne 0 ]; then
-            echo "Error during file upload with exit code $result"
-            exit $result
+          if [ $? -ne 0 ]; then
+            echo "File upload failed"
+            exit 1
           fi

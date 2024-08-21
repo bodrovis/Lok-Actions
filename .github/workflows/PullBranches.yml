@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch the full history of the repository to ensure all commits are available
+          fetch-depth: 0
 
       - name: Install Lokalise CLI
         run: |
@@ -53,18 +53,12 @@ jobs:
             local attempt=0
             local max_retries=3
             local sleep_time=1
+            local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
 
             while [ $attempt -lt $max_retries ]; do
               echo "Attempt $((attempt + 1)) of $max_retries"
 
               set +e  # Temporarily disable exit on error
-
-              # Check if LOKALISE_CLI_ADD_PARAMS is set and not empty
-              if [ -n "${LOKALISE_CLI_ADD_PARAMS}" ]; then
-                additional_params="${LOKALISE_CLI_ADD_PARAMS}"
-              else
-                additional_params=""
-              fi
 
               # Run the lokalise2 command and capture the output
               output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
@@ -83,22 +77,17 @@ jobs:
               set -e  # Re-enable exit on error
 
               # Process the output
-              if [ $exit_code -ne 0 ]; then
-                if echo "$output" | grep -q 'API request error 429'; then
-                  attempt=$((attempt + 1))
-                  echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
-                  sleep $sleep_time
-                  sleep_time=$((sleep_time * 2))
-                elif echo "$output" | grep -q 'API request error'; then
-                  echo "Permanent error encountered during download: $output"
-                  return 1
-                else
-                  echo "Unexpected error occurred: $output"
-                  return 1
-                fi
-              else
+              if [ $exit_code -eq 0 ]; then
                 echo "Successfully downloaded files"
                 return 0
+              elif echo "$output" | grep -q 'API request error 429'; then
+                attempt=$((attempt + 1))
+                echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
+                sleep $sleep_time
+                sleep_time=$((sleep_time * 2))
+              else
+                echo "Error encountered during download: $output"
+                return 1
               fi
             done
 
@@ -106,21 +95,14 @@ jobs:
             return 1
           }
 
-          download_files
-          result=$?
-          if [ $result -ne 0 ]; then
-            echo "Error during file download with exit code $result"
-            exit $result
+          if ! download_files; then
+            echo "Error during file download"
+            exit 1
           fi
 
-          git status
-
-          echo "Checking for unstaged changes..."
           if [[ -n $(git status --untracked-files=no --porcelain) ]]; then
-            echo "Changes detected."
             echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
           else
-            echo "No changes detected."
             echo "CHANGES_DETECTED=false" >> $GITHUB_ENV
           fi
 
@@ -139,21 +121,12 @@ jobs:
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          if git show-ref --quiet refs/heads/"$GIT_LOCALIZATION_BRANCH_NAME"; then
-            echo "Git Branch $GIT_LOCALIZATION_BRANCH_NAME already exists. Checking out the branch."
-            git checkout "$GIT_LOCALIZATION_BRANCH_NAME"
-          else
-            echo "Branch $GIT_LOCALIZATION_BRANCH_NAME does not exist. Creating and checking out the branch."
-            git checkout -b "$GIT_LOCALIZATION_BRANCH_NAME"
-          fi
+          git checkout -b "$GIT_LOCALIZATION_BRANCH_NAME" || git checkout "$GIT_LOCALIZATION_BRANCH_NAME"
 
-          echo "Adding files to staging area:"
           git add "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" -- ':!${{ env.LOKALISE_FOLDER_PATH }}/${{ env.LOKALISE_SOURCE_LANG_ISO }}/*.${{ env.LOKALISE_FILE_FORMAT }}'
 
-          echo "Committing changes..."
           git commit -m 'Translations update'
 
-          echo "Pushing changes to remote repository..."
           git push origin "$GIT_LOCALIZATION_BRANCH_NAME"
 
       - name: Create Pull Request if changes detected
@@ -162,13 +135,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create --base "${{ github.ref_name }}" \
-                      --head "$GIT_LOCALIZATION_BRANCH_NAME" \
-                      --title "Lokalise translations update" \
-                      --body ""
-
-          if [ $? -eq 0 ]; then
-            echo "Pull Request created successfully."
-          else
+                       --head "$GIT_LOCALIZATION_BRANCH_NAME" \
+                       --title "Lokalise translations update" \
+                       --body "" || {
             echo "Failed to create Pull Request."
             exit 1
-          fi
+          }
+
+          echo "Pull Request created successfully."
