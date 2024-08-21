@@ -11,7 +11,6 @@ jobs:
       LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
       LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
     steps:
-      # Checkout the repository to the GitHub runner
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
@@ -19,10 +18,13 @@ jobs:
 
       - name: Install Lokalise CLI
         run: |
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
-          if [ $? -ne 0 ]; then
-            echo "Failed to install Lokalise CLI"
-            exit 1
+          if [ ! -f ./bin/lokalise2 ]; then
+            curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
+              echo "Failed to install Lokalise CLI"
+              exit 1
+            }
+          else
+            echo "Lokalise CLI already installed, skipping installation."
           fi
 
       - name: Determine Lokalise Branch
@@ -37,9 +39,8 @@ jobs:
             if echo "$LOKALISE_BRANCHES" | grep -qw "${{ github.ref_name }}"; then
               echo "LOKALISE_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
             else
-              echo "Branch ${{ github.ref_name }} does not exist in Lokalise."
-              echo "Cancelling the workflow."
-              exit 1
+              echo "Branch ${{ github.ref_name }} does not exist in Lokalise. Cancelling workflow."
+              exit 0
             fi
           fi
 

@@ -29,10 +29,13 @@ jobs:
       - name: Install Lokalise CLI
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         run: |
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
-          if [ $? -ne 0 ]; then
-            echo "Failed to install Lokalise CLI"
-            exit 1
+          if [ ! -f ./bin/lokalise2 ]; then
+            curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
+              echo "Failed to install Lokalise CLI"
+              exit 1
+            }
+          else
+            echo "Lokalise CLI already installed, skipping installation."
           fi
         
       - name: Push Localization Files to Lokalise

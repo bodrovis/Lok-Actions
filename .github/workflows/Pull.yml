@@ -13,10 +13,13 @@ jobs:
 
       - name: Install Lokalise CLI
         run: |
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh
-          if [ $? -ne 0 ]; then
-            echo "Failed to install Lokalise CLI"
-            exit 1
+          if [ ! -f ./bin/lokalise2 ]; then
+            curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
+              echo "Failed to install Lokalise CLI"
+              exit 1
+            }
+          else
+            echo "Lokalise CLI already installed, skipping installation."
           fi
 
       - name: Pull Localization Files from Lokalise
@@ -89,39 +92,32 @@ jobs:
             exit $result
           fi
 
-      - name: Check for Changes
-        id: check_changes
-        run: |
           if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
             echo "has_changes=false" >> $GITHUB_ENV
           else
             echo "has_changes=true" >> $GITHUB_ENV
           fi
 
-      - name: Create Branch (if changes)
+      - name: Commit and Push Changes
         if: env.has_changes == 'true'
-        id: create_branch
         env:
           LOKALISE_BRANCH_MARKER: ${{ vars.LOKALISE_BRANCH_MARKER }}
-        run: |
-          SHORT_SHA=${GITHUB_SHA::6}  
-          BRANCH_NAME="${{ env.LOKALISE_BRANCH_MARKER }}_${{ github.ref_name }}_$SHORT_SHA"
-          git checkout -b "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
-
-      - name: Commit and Push Changes (if changes)
-        if: env.has_changes == 'true'
-        env:
           LOKALISE_FOLDER_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
+          SHORT_SHA=${GITHUB_SHA::6}  
+          BRANCH_NAME="${{ env.LOKALISE_BRANCH_MARKER }}_${{ github.ref_name }}_$SHORT_SHA"
+
+          git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
           git add "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
           git commit -m 'Translations update'
           git push origin "${{ env.branch_name }}"
 
-      - name: Create Pull Request (if changes)
+      - name: Create Pull Request
         if: env.has_changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -129,6 +125,9 @@ jobs:
           gh pr create --base ${{ github.ref_name }} \
                        --head "${{ env.branch_name }}" \
                        --title "Lokalise translations update" \
-                       --body ""
+                       --body "" || {
+            echo "Failed to create a Pull Request"
+            exit 1
+          }
 
           echo "Pull Request created successfully."
