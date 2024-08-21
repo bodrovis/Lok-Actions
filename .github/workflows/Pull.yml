@@ -62,7 +62,7 @@ jobs:
 
           SHORT_SHA=${GITHUB_SHA::6}  
           BRANCH_NAME="${{ env.LOKALISE_BRANCH_MARKER }}_${{ github.ref_name }}_$SHORT_SHA"
-
+          echo "BRANCH_NAME is: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
           git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
