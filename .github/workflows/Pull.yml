@@ -63,9 +63,10 @@ jobs:
           SHORT_SHA=${GITHUB_SHA::6}  
           BRANCH_NAME="${{ env.LOKALISE_BRANCH_MARKER }}_${{ github.ref_name }}_$SHORT_SHA"
 
-          git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
+          git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
+        
           git add "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --force
           git commit -m 'Translations update'
           git push origin "${{ env.branch_name }}"
