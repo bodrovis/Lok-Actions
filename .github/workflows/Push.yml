@@ -43,51 +43,10 @@ jobs:
           LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
           LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
         run: |
-          upload_file() {
-            local file=$1
-            local attempt=0
-            local max_retries=3
-            local sleep_time=1
-            local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
+          ./.github/scripts/lokalise_upload.sh
+          
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG_ISO"
 
-            echo "Starting upload for $file"
-            while [ $attempt -lt $max_retries ]; do
-              output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
-                --project-id="${LOKALISE_PROJECT_ID}" \
-                file upload \
-                --file="$file" \
-                --lang-iso="${LOKALISE_SOURCE_LANG}" \
-                --replace-modified \
-                --include-path \
-                --distinguish-by-file \
-                --poll \
-                --poll-timeout=120s \
-                --tag-inserted-keys \
-                --tag-skipped-keys=true \
-                --tag-updated-keys \
-                --tags "$GITHUB_REF_NAME" \
-                $additional_params 2>&1)
-
-              if [ $? -eq 0 ]; then
-                echo "Successfully uploaded file: $file"
-                return 0
-              elif echo "$output" | grep -q 'API request error 429'; then
-                attempt=$((attempt + 1))
-                echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
-                sleep $sleep_time
-                sleep_time=$((sleep_time * 2))
-              else
-                echo "Permanent error encountered during upload: $output"
-                return 1
-              fi
-            done
-
-            echo "Failed to upload file: $file after $max_retries attempts"
-            return 1
-          }
-
-          export -f upload_file
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ {}
           if [ $? -ne 0 ]; then
             echo "File upload failed"
             exit 1
