@@ -50,10 +50,13 @@ jobs:
           LOKALISE_FOLDER_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         run: |
           chmod +x .github/scripts/lokalise_download.sh
+          . ./.github/scripts/lokalise_download.sh
 
           project_id_with_branch="${LOKALISE_PROJECT_ID}:${LOKALISE_BRANCH}"
           
-          if ! ./.github/scripts/lokalise_download.sh "$project_id_with_branch"; then
+          download_files "$project_id_with_branch"
+                
+          if [ $? -ne 0 ]; then
             echo "Error during file download"
             exit 1
           fi
