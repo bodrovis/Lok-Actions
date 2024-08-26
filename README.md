@@ -105,3 +105,22 @@ By default, the following command-line parameters are set when downloading files
 - `--original-filenames` — Set to `true`.
 - `--directory-prefix` — Set to `/`.
 - `--include-tags` — Set to the branch name that triggered the workflow.
+
+## Note on cron jobs
+
+You can easily schedule your workflows using cron ([POSIX syntax](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07)). To do that, add a new `schedule` event:
+
+```yaml
+on:
+  schedule:
+    - cron: "0 0 * * *"
+```
+
+In this example, the workflow will now run every day at midnight. If you need help creating the right schedule, check out this [cron expression generator](https://crontab.guru/).
+
+A few things to keep in mind:
+
+* Scheduled workflows always run on the latest commit from the default or base branch.
+* The minimum interval for running scheduled workflows is every 5 minutes.
+* You can use `if` conditions to skip specific times: `if: github.event.schedule != '30 5 * * 1,3'`.
+* Watch out for [GitHub Actions quotas](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions). On the Free plan, you get 2000 minutes per month.
