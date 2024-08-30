@@ -1,5 +1,5 @@
 name: Pull from Lokalise
-run-name: Pull from Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
+run-name: Pull from Lokalise [${{ github.ref_name }}]
 on:
   workflow_dispatch:
 

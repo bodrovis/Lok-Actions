@@ -1,5 +1,5 @@
 name: Push to Lokalise
-run-name: Push to Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
+run-name: Push to Lokalise [${{ github.ref_name }}]
 on:
   workflow_dispatch:
 
