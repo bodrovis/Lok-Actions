@@ -1,0 +1,23 @@
+name: Push to Lokalise
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Lokalise
+        uses: bodrovis/Lok-Actions/actions/push@master
+        with:
+          lokalise_api_token: ${{ secrets.LOKALISE_API_TOKEN }}
+          lokalise_project_id: ${{ vars.LOKALISE_PROJECT_ID }}
+          lokalise_source_lang: ${{ vars.LOKALISE_SOURCE_LANG }}
+          lokalise_translations_path: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
+          lokalise_file_format: ${{ vars.LOKALISE_FILE_FORMAT }}
+          lokalise_push_additional_params: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
