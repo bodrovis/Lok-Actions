@@ -26,6 +26,10 @@ inputs:
     required: false
     default: 'lok'
 
+branding:
+  icon: 'download-cloud'
+  color: 'orange'
+
 runs:
   using: "composite"
   steps:
@@ -42,6 +46,7 @@ runs:
         fi
 
     - name: Pull translation files from Lokalise
+      id: pull-files
       shell: bash
       env:
         LOKALISE_TOKEN: ${{ inputs.api_token }}
@@ -56,20 +61,20 @@ runs:
               
         if [ $? -ne 0 ]; then
           echo "Error during file download"
-          echo "has_changes=false" >> $GITHUB_ENV
+          echo "has_changes=false" >> $GITHUB_OUTPUT
           exit 1
         fi
 
         if [[ -z $(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain) ]]; then
           echo "No translation file changes detected after pulling from Lokalise"
-          echo "has_changes=false" >> $GITHUB_ENV
+          echo "has_changes=false" >> $GITHUB_OUTPUT
         else
           echo "Translation file changes detected after pulling from Lokalise"
-          echo "has_changes=true" >> $GITHUB_ENV
+          echo "has_changes=true" >> $GITHUB_OUTPUT
         fi
 
     - name: Commit and push changes
-      if: env.has_changes == 'true'
+      if: steps.pull-files.outputs.has_changes == 'true'
       shell: bash
       run: |
         git config --global user.name "${GITHUB_ACTOR}"
