@@ -26,11 +26,6 @@ inputs:
     required: false
     default: 'lok'
 
-outputs:
-  pulled_files:
-    description: "List of pulled files"
-    value: ${{ steps.commit-and-push.outputs.pulled_files }}
-
 branding:
   icon: 'download-cloud'
   color: 'orange'
@@ -87,10 +82,6 @@ runs:
 
         git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
       
-        # Capture the list of changed files
-        PULLED_FILES=$(git diff --name-only --cached)
-        echo "pulled_files=$PULLED_FILES" >> $GITHUB_OUTPUT
-
         git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force
         git commit -m 'Translations update'
         git push origin "$BRANCH_NAME"
