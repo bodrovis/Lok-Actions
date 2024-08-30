@@ -62,14 +62,21 @@ runs:
         LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
         ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
       run: |
-        chmod +x .github/scripts/lokalise_upload.sh
+        # Store the changed files in a variable
+        ALL_CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+        echo "${{ steps.changed-files.outputs.all_changed_files }}"
+        # Check if the variable is not empty
+        if [ -n "$ALL_CHANGED_FILES" ]; then
+          # Make sure the script is executable
+          chmod +x .github/scripts/lokalise_upload.sh
 
-        echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+          # Pass the files to xargs for processing
+          echo "$ALL_CHANGED_FILES" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
 
-        if [ $? -ne 0 ]; then
-          echo "File upload failed"
-          exit 1
+          if [ $? -ne 0 ]; then
+            echo "File upload failed"
+            exit 1
+          fi
+        else
+          echo "No files changed. Skipping upload."
         fi
-# branding:
-#   icon: 'upload'
-#   color: 'blue'
