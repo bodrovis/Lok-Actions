@@ -1,0 +1,71 @@
+name: 'Initial push to Lokalise (all files)'
+description: 'Pushes all translation files to Lokalise'
+author: 'Lokalise Team'
+inputs:
+  lokalise_api_token:
+    description: 'API token for Lokalise with read/write permissions'
+    required: true
+    secret: true
+  lokalise_project_id:
+    description: 'Project ID for Lokalise'
+    required: true
+  lokalise_source_lang:
+    description: 'Source language (e.g., en, fr_FR)'
+    required: true
+    default: 'en'
+  lokalise_translations_path:
+    description: 'Path to translation files'
+    required: true
+    default: 'locales'
+  lokalise_file_format:
+    description: 'Format of the translation files (e.g., json)'
+    required: true
+    default: 'json'
+  lokalise_push_additional_params:
+    description: 'Additional parameters for Lokalise CLI push'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find All Translation Files
+    id: find-files
+    run: |
+      ALL_FILES=$(find "${{ inputs.lokalise_translations_path }}/${{ inputs.lokalise_source_lang }}" -name "*.${{ inputs.lokalise_file_format }}" -type f | tr '\n' ' ')
+      
+      if [ -z "$ALL_FILES" ]; then
+        echo "No translation files found."
+        echo "has_files=false" >> $GITHUB_ENV
+      else
+        echo "ALL_FILES=$ALL_FILES" >> $GITHUB_ENV
+        echo "has_files=true" >> $GITHUB_ENV
+      fi
+
+  - name: Install Lokalise CLI
+    if: env.has_files == 'true'
+    run: |
+      if [ ! -f ./bin/lokalise2 ]; then
+        curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
+          echo "Failed to install Lokalise CLI"
+          exit 1
+        }
+      else
+        echo "Lokalise CLI already installed, skipping installation."
+      fi
+
+  - name: Push All Localization Files to Lokalise
+    if: env.has_files == 'true'
+    env:
+      LOKALISE_API_TOKEN: ${{ inputs.lokalise_api_token }}
+      LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
+    run: |
+      ALL_FILES="${{ env.ALL_FILES }}"
+
+      chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
+
+      echo "$ALL_FILES" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+
+      if [ $? -ne 0 ]; then
+        echo "File upload failed"
+        exit 1
+      fi

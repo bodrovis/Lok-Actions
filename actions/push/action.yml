@@ -52,12 +52,7 @@ runs:
       shell: bash
       env:
         LOKALISE_API_TOKEN: ${{ inputs.lokalise_api_token }}
-        LOKALISE_PROJECT_ID: ${{ inputs.lokalise_project_id }}
-        LOKALISE_SOURCE_LANG: ${{ inputs.lokalise_source_lang }}
-        LOKALISE_TRANSLATIONS_PATH: ${{ inputs.lokalise_translations_path }}
-        LOKALISE_FILE_FORMAT: ${{ inputs.lokalise_file_format }}
         LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
-        ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
       run: |
         ALL_CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
 
