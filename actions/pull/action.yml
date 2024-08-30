@@ -26,6 +26,11 @@ inputs:
     required: false
     default: 'lok'
 
+outputs:
+  pulled_files:
+    description: "List of pulled files"
+    value: ${{ steps.commit-and-push.outputs.pulled_files }}
+
 branding:
   icon: 'download-cloud'
   color: 'orange'
@@ -36,14 +41,8 @@ runs:
     - name: Install Lokalise CLI
       shell: bash
       run: |
-        if [ ! -f ./bin/lokalise2 ]; then
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
-            echo "Failed to install Lokalise CLI"
-            exit 1
-          }
-        else
-          echo "Lokalise CLI already installed, skipping installation."
-        fi
+        chmod +x "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
+        "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
 
     - name: Pull translation files from Lokalise
       id: pull-files
@@ -74,6 +73,7 @@ runs:
         fi
 
     - name: Commit and push changes
+      id: commit-and-push
       if: steps.pull-files.outputs.has_changes == 'true'
       shell: bash
       run: |
@@ -87,6 +87,10 @@ runs:
 
         git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
       
+        # Capture the list of changed files
+        CHANGED_FILES=$(git diff --name-only --cached)
+        echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+
         git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force
         git commit -m 'Translations update'
         git push origin "$BRANCH_NAME"

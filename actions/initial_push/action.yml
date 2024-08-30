@@ -37,27 +37,21 @@ runs:
         
         if [ -z "$ALL_FILES" ]; then
           echo "No translation files found."
-          echo "has_files=false" >> $GITHUB_ENV
+          echo "has_files=false" >> $GITHUB_OUTPUT
         else
           echo "ALL_FILES=$ALL_FILES" >> $GITHUB_ENV
-          echo "has_files=true" >> $GITHUB_ENV
+          echo "has_files=true" >> $GITHUB_OUTPUT
         fi
 
     - name: Install Lokalise CLI
-      if: env.has_files == 'true'
+      if: steps.find-files.outputs.has_files == 'true'
       shell: bash
       run: |
-        if [ ! -f ./bin/lokalise2 ]; then
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
-            echo "Failed to install Lokalise CLI"
-            exit 1
-          }
-        else
-          echo "Lokalise CLI already installed, skipping installation."
-        fi
+        chmod +x "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
+        "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
 
     - name: Push all translation files to Lokalise
-      if: env.has_files == 'true'
+      if: steps.find-files.outputs.has_files == 'true'
       shell: bash
       env:
         LOKALISE_TOKEN: ${{ inputs.api_token }}

@@ -39,14 +39,8 @@ runs:
       if: steps.changed-files.outputs.any_changed == 'true'
       shell: bash
       run: |
-        if [ ! -f ./bin/lokalise2 ]; then
-          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
-            echo "Failed to install Lokalise CLI"
-            exit 1
-          }
-        else
-          echo "Lokalise CLI already installed, skipping installation."
-        fi
+        chmod +x "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
+        "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
 
     - name: Push translation files to Lokalise
       if: steps.changed-files.outputs.any_changed == 'true'
