@@ -2,7 +2,7 @@
 
 download_files() {
     local project_id_with_branch=$1
-    local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
+    local additional_params="${CLI_ADD_PARAMS:-}"
     local attempt=0
     local max_retries=3
     local sleep_time=1
@@ -13,10 +13,10 @@ download_files() {
 
         set +e  # Temporarily disable exit on error
 
-        output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
+        output=$(./bin/lokalise2 --token="${LOKALISE_TOKEN}" \
             --project-id="$project_id_with_branch" \
             file download \
-            --format="${LOKALISE_FILE_FORMAT}" \
+            --format="${FILE_FORMAT}" \
             --original-filenames=true \
             --directory-prefix="/" \
             --include-tags="${GITHUB_REF_NAME}" \
