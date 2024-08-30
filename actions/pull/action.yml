@@ -88,8 +88,8 @@ runs:
         git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
       
         # Capture the list of changed files
-        CHANGED_FILES=$(git diff --name-only --cached)
-        echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+        PULLED_FILES=$(git diff --name-only --cached)
+        echo "pulled_files=$PULLED_FILES" >> $GITHUB_OUTPUT
 
         git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force
         git commit -m 'Translations update'
