@@ -26,8 +26,43 @@ inputs:
     required: false
 
 runs:
-  using: 'bash'
-  main: 'entrypoint.sh'
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+      with:
+        files: "${{ inputs.lokalise_translations_path }}/${{ inputs.lokalise_source_lang }}/**.${{ inputs.lokalise_file_format }}"
+
+    - name: Install Lokalise CLI
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        if [ ! -f ./bin/lokalise2 ]; then
+          curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
+            echo "Failed to install Lokalise CLI"
+            exit 1
+          }
+        else
+          echo "Lokalise CLI already installed, skipping installation."
+        fi
+
+    - name: Push Localization Files to Lokalise
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        chmod +x .github/scripts/*.sh
+        . ./.github/scripts/lokalise_upload.sh
+        echo "${{ env.ALL_CHANGED_FILES }}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+
+      env:
+        LOKALISE_API_TOKEN: ${{ inputs.lokalise_api_token }}
+        LOKALISE_PROJECT_ID: ${{ inputs.lokalise_project_id }}
+        LOKALISE_SOURCE_LANG: ${{ inputs.lokalise_source_lang }}
+        LOKALISE_TRANSLATIONS_PATH: ${{ inputs.lokalise_translations_path }}
+        LOKALISE_FILE_FORMAT: ${{ inputs.lokalise_file_format }}
+        LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
 
 # branding:
 #   icon: 'upload'
