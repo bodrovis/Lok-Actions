@@ -1,5 +1,5 @@
-name: Push All to Lokalise
-run-name: Push All to Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
+name: Initial push to Lokalise (push all)
+run-name: Initial push to Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
 on:
   workflow_dispatch:
 
