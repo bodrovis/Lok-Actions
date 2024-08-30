@@ -38,12 +38,15 @@ jobs:
                 
           if [ $? -ne 0 ]; then
             echo "Error during file download"
+            echo "has_changes=false" >> $GITHUB_ENV
             exit 1
           fi
 
-          if [[ -z $(git status --untracked-files=no --porcelain) ]]; then
+          if [[ -z $(git status "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}" --untracked-files=no --porcelain) ]]; then
+            echo "No translation file changes detected after pulling from Lokalise"
             echo "has_changes=false" >> $GITHUB_ENV
           else
+            echo "Translation file changes detected after pulling from Lokalise"
             echo "has_changes=true" >> $GITHUB_ENV
           fi
 
