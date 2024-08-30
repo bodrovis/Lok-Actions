@@ -92,7 +92,7 @@ runs:
         git push origin "$BRANCH_NAME"
 
     - name: Create Pull Request
-      if: env.has_changes == 'true'
+      if: steps.pull-files.outputs.has_changes == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
