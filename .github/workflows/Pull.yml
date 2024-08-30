@@ -42,10 +42,11 @@ jobs:
             exit 1
           fi
 
-          # Check if translation files were modified
-          CHANGED_FILES=$(git diff --name-only HEAD -- "${{ env.LOKALISE_FOLDER_PATH }}/**/*.${{ env.LOKALISE_FILE_FORMAT }}")
+          # Directly check for changes within the specific directory
+          TRANSLATION_PATH="${{ env.LOKALISE_FOLDER_PATH }}"
+          FILE_EXTENSION="${{ env.LOKALISE_FILE_FORMAT }}"
 
-          if [ -z "$CHANGED_FILES" ]; then
+          if [[ -z $(git status "$TRANSLATION_PATH" --untracked-files=no --porcelain | grep "\.${FILE_EXTENSION}$") ]]; then
             echo "No translation file changes detected after pulling from Lokalise"
             echo "has_changes=false" >> $GITHUB_ENV
           else
