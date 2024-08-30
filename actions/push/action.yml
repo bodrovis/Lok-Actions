@@ -39,6 +39,7 @@ runs:
 
     - name: Install Lokalise CLI
       if: steps.changed-files.outputs.any_changed == 'true'
+      shell: bash
       run: |
         if [ ! -f ./bin/lokalise2 ]; then
           curl -sfL https://raw.githubusercontent.com/lokalise/lokalise-cli-2-go/master/install.sh | sh || {
@@ -51,11 +52,7 @@ runs:
 
     - name: Push Localization Files to Lokalise
       if: steps.changed-files.outputs.any_changed == 'true'
-      run: |
-        chmod +x .github/scripts/*.sh
-        . ./.github/scripts/lokalise_upload.sh
-        echo "${{ env.ALL_CHANGED_FILES }}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
-
+      shell: bash
       env:
         LOKALISE_API_TOKEN: ${{ inputs.lokalise_api_token }}
         LOKALISE_PROJECT_ID: ${{ inputs.lokalise_project_id }}
@@ -63,6 +60,10 @@ runs:
         LOKALISE_TRANSLATIONS_PATH: ${{ inputs.lokalise_translations_path }}
         LOKALISE_FILE_FORMAT: ${{ inputs.lokalise_file_format }}
         LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
+      run: |
+        chmod +x .github/scripts/*.sh
+        . ./.github/scripts/lokalise_upload.sh
+        echo "${{ env.ALL_CHANGED_FILES }}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
 
 # branding:
 #   icon: 'upload'
