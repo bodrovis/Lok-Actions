@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Find All Translation Files
         id: find-files
@@ -25,7 +23,7 @@ jobs:
             echo "No translation files found."
             echo "has_files=false" >> $GITHUB_ENV
           else
-            echo "ALL_FILES=\"$ALL_FILES\"" >> $GITHUB_ENV
+            echo "ALL_FILES=$ALL_FILES" >> $GITHUB_ENV
             echo "has_files=true" >> $GITHUB_ENV
           fi
 
