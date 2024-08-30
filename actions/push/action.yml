@@ -28,8 +28,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # - name: Checkout Repository
-    #   uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
     - name: Get changed files
       id: changed-files
@@ -60,11 +60,16 @@ runs:
         LOKALISE_TRANSLATIONS_PATH: ${{ inputs.lokalise_translations_path }}
         LOKALISE_FILE_FORMAT: ${{ inputs.lokalise_file_format }}
         LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
+        ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
       run: |
-        chmod +x .github/scripts/*.sh
-        . ./.github/scripts/lokalise_upload.sh
-        echo "${{ env.ALL_CHANGED_FILES }}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+        chmod +x .github/scripts/lokalise_upload.sh
 
+        echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+
+        if [ $? -ne 0 ]; then
+          echo "File upload failed"
+          exit 1
+        fi
 # branding:
 #   icon: 'upload'
 #   color: 'blue'

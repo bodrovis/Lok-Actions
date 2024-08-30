@@ -6,8 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # env:
-    #   LOKALISE_SOURCE_LANG: ${{ vars.LOKALISE_SOURCE_LANG }}
+    env:
+      LOKALISE_SOURCE_LANG: ${{ vars.LOKALISE_SOURCE_LANG }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -17,9 +17,9 @@ jobs:
       - name: Get changed files
         id: changed-files-specific
         uses: tj-actions/changed-files@v44
-        # env:
-        #   LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
-        #   LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
+        env:
+          LOKALISE_FILE_FORMAT: ${{ vars.LOKALISE_FILE_FORMAT }}
+          LOKALISE_TRANSLATIONS_PATH: ${{ vars.LOKALISE_TRANSLATIONS_PATH }}
         with:
           files: "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}/**.${{ env.LOKALISE_FILE_FORMAT }}"
 
@@ -39,13 +39,13 @@ jobs:
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
-          # LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
-          # LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
-          # LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
-        # chmod +x .github/scripts/lokalise_upload.sh
-        # . ./.github/scripts/lokalise_upload.sh
+          LOKALISE_CLI_ADD_PARAMS: ${{ vars.LOKALISE_PUSH_ADDITIONAL_PARAMS }}
+          LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
+          LOKALISE_PROJECT_ID: ${{ vars.LOKALISE_PROJECT_ID }}
         run: |
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c 'upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG"
+          chmod +x .github/scripts/lokalise_upload.sh
+
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG"
 
           if [ $? -ne 0 ]; then
             echo "File upload failed"
