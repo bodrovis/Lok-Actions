@@ -46,6 +46,7 @@ runs:
       env:
         LOKALISE_TOKEN: ${{ inputs.api_token }}
         CLI_ADD_PARAMS: ${{ inputs.additional_params }}
+        FILE_FORMAT: ${{ inputs.file_format }}
       run: |
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_download.sh"
 
