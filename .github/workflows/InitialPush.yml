@@ -1,5 +1,5 @@
-name: Initial push to Lokalise (push all)
-run-name: Initial push to Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
+name: Push All to Lokalise
+run-name: Push All to Lokalise [${{ github.ref_name }}] ${{ github.event.after }}
 on:
   workflow_dispatch:
 
@@ -13,17 +13,19 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-        
+        with:
+          fetch-depth: 0
+
       - name: Find All Translation Files
         id: find-files
         run: |
-          ALL_FILES=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}" -name "*.${{ env.LOKALISE_FILE_FORMAT }}" -type f)
+          ALL_FILES=$(find "${{ env.LOKALISE_TRANSLATIONS_PATH }}/${{ env.LOKALISE_SOURCE_LANG }}" -name "*.${{ env.LOKALISE_FILE_FORMAT }}" -type f | tr '\n' ' ')
           
           if [ -z "$ALL_FILES" ]; then
             echo "No translation files found."
             echo "has_files=false" >> $GITHUB_ENV
           else
-            echo "ALL_FILES=$ALL_FILES" >> $GITHUB_ENV
+            echo "ALL_FILES=\"$ALL_FILES\"" >> $GITHUB_ENV
             echo "has_files=true" >> $GITHUB_ENV
           fi
 
@@ -50,7 +52,7 @@ jobs:
         run: |
           chmod +x .github/scripts/lokalise_upload.sh
 
-          echo "${ALL_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG"
+          echo ${ALL_FILES} | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. ./.github/scripts/lokalise_upload.sh && upload_file "$@"' _ "{}" "$LOKALISE_PROJECT_ID" "$LOKALISE_SOURCE_LANG"
 
           if [ $? -ne 0 ]; then
             echo "File upload failed"
