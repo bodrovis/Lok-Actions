@@ -3,15 +3,15 @@
 upload_file() {
     local file=$1
     local project_id_with_branch=$2
-    local lang_iso=$3
-    local additional_params="${LOKALISE_CLI_ADD_PARAMS:-}"
+    local lang_iso="${BASE_LANG}"
+    local additional_params="${CLI_ADD_PARAMS:-}"
     local attempt=0
     local max_retries=3
     local sleep_time=1
 
     echo "Starting upload for $file"
     while [ $attempt -lt $max_retries ]; do
-        output=$(./bin/lokalise2 --token="${LOKALISE_API_TOKEN}" \
+        output=$(./bin/lokalise2 --token="${LOKALISE_TOKEN}" \
             --project-id="$project_id_with_branch" \
             file upload \
             --file="$file" \

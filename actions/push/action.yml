@@ -2,28 +2,29 @@ name: 'Push to Lokalise'
 description: 'Push translation files to Lokalise'
 author: 'Lokalise Team'
 inputs:
-  lokalise_api_token:
+  api_token:
     description: 'API token for Lokalise with read/write permissions'
     required: true
     secret: true
-  lokalise_project_id:
+  project_id:
     description: 'Project ID for Lokalise'
     required: true
-  lokalise_source_lang:
-    description: 'Source language (e.g., en, fr_FR)'
+  base_lang:
+    description: 'Base language (e.g., en, fr_FR)'
     required: true
     default: 'en'
-  lokalise_translations_path:
+  translations_path:
     description: 'Path to translation files'
     required: true
     default: 'locales'
-  lokalise_file_format:
+  file_format:
     description: 'Format of the translation files (e.g., json)'
     required: true
     default: 'json'
-  lokalise_push_additional_params:
-    description: 'Additional parameters for Lokalise CLI push'
+  additional_params:
+    description: 'Additional parameters for Lokalise CLI on push'
     required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -32,7 +33,7 @@ runs:
       id: changed-files
       uses: tj-actions/changed-files@v44
       with:
-        files: "${{ inputs.lokalise_translations_path }}/${{ inputs.lokalise_source_lang }}/**.${{ inputs.lokalise_file_format }}"
+        files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**.${{ inputs.file_format }}"
 
     - name: Install Lokalise CLI
       if: steps.changed-files.outputs.any_changed == 'true'
@@ -47,18 +48,19 @@ runs:
           echo "Lokalise CLI already installed, skipping installation."
         fi
 
-    - name: Push Localization Files to Lokalise
+    - name: Push translation files to Lokalise
       if: steps.changed-files.outputs.any_changed == 'true'
       shell: bash
       env:
-        LOKALISE_API_TOKEN: ${{ inputs.lokalise_api_token }}
-        LOKALISE_CLI_ADD_PARAMS: ${{ inputs.lokalise_push_additional_params }}
+        LOKALISE_TOKEN: ${{ inputs.api_token }}
+        CLI_ADD_PARAMS: ${{ inputs.additional_params }}
+        BASE_LANG: ${{ inputs.base_lang }}
       run: |
         ALL_CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
 
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
 
-        echo "$ALL_CHANGED_FILES" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.lokalise_project_id }}" "${{ inputs.lokalise_source_lang }}"
+        echo "$ALL_CHANGED_FILES" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}"
 
         if [ $? -ne 0 ]; then
           echo "File upload failed"
