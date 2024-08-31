@@ -1,12 +1,115 @@
 # Sample GitHub Actions to facilitate content exchange with Lokalise TMS
 
-Push and pull are currently supported through tags and Lokalise branches. Use with "Web and mobile" projects to easily exchange your content.
+This collection of GitHub Actions helps you exchange translation files between Lokalise "Web and mobile" projects and GitHub repositories. It includes the following actions:
 
-## Setup
+- **Initial push:** Upload all translation files (for the base language) from GitHub to Lokalise.
+- **Push:** Upload new or updated translation files (for the base language) from GitHub to Lokalise.
+- **Pull:** Download translation files (for all languages) from Lokalise to GitHub as a pull request.
+
+## Quickstart
+
+**[Initial push (push all translation files to Lokalise)](./actions/initial_push/README.md):**
+
+```yaml
+name: Initial full push with tags
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Lokalise
+        uses: bodrovis/Lok-Actions/actions/initial_push@master
+        with:
+          api_token: ${{ secrets.LOKALISE_API_TOKEN }}
+          project_id: LOKALISE_PROJECT_ID
+          base_lang: BASE_LANG_ISO
+          translations_path: TRANSLATIONS_PATH
+          file_format: FILE_FORMAT
+          additional_params: ADDITIONAL_CLI_PARAMS
+```
+
+**[Push new/updated translation files to Lokalise](./actions/push/README.md):**
+
+```yaml
+name: Demo push with tags
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Lokalise
+        uses: bodrovis/Lok-Actions/actions/push@master
+        with:
+          api_token: ${{ secrets.LOKALISE_API_TOKEN }}
+          project_id: LOKALISE_PROJECT_ID
+          base_lang: BASE_LANG_ISO
+          translations_path: TRANSLATIONS_PATH
+          file_format: FILE_FORMAT
+          additional_params: ADDITIONAL_CLI_PARAMS
+```
+
+**[Pull translation files from Lokalise (via PR)](./actions/pull/README.md):**
+
+```yaml
+name: Demo pull with tags
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pull from Lokalise
+        uses: bodrovis/Lok-Actions/actions/pull@master
+        with:
+          api_token: ${{ secrets.LOKALISE_API_TOKEN }}
+          project_id: LOKALISE_PROJECT_ID
+          translations_path: TRANSLATIONS_PATH
+          file_format: FILE_FORMAT
+          additional_params: ADDITIONAL_CLI_PARAMS
+```
+
+Refer to the specific action's README for setup details.
+
+## General setup
+
+Every action from this collection requires some general setup.
 
 ### Lokalise API token
 
-First, you'll need to provide your [Lokalise API token](https://docs.lokalise.com/en/articles/1929556-api-and-sdk-tokens#h_9ea8e7ff3c) in the repository secrets:
+First, you'll need to generate a read/write [Lokalise API token](https://docs.lokalise.com/en/articles/1929556-api-and-sdk-tokens#h_9ea8e7ff3c) and pass it to the action. For example:
+
+```yaml
+- name: Pull from Lokalise
+  uses: bodrovis/Lok-Actions/actions/pull@master
+  with:
+    api_token: ${{ secrets.LOKALISE_API_TOKEN }}
+```
+
+**Do not** paste your token directly. Use repository secrets instead:
 
 1. Open repository **Settings**.
 2. Go to **Secrets and variables > Actions**.
@@ -17,37 +120,14 @@ First, you'll need to provide your [Lokalise API token](https://docs.lokalise.co
 
 ### Mandatory workflow parameters
 
-You'll also need to provide some mandatory parameters for the workflow. These are set as environment variables:
+You'll also need to provide some mandatory parameters for the workflows. These can be set as environment variables, secrets, or passed directly.
 
-1. Go to the repository **Settings**.
-2. Navigate to **Secrets and variables > Actions**.
-3. Switch to the **Variables** tab.
-4. Click **New repository variable**.
-5. Fill in the variable's name and value.
+The following parameters are **required for every workflow**:
 
-You'll need to create the following variables:
-
-- `LOKALISE_TRANSLATIONS_PATH` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, enter `locales` (without a leading forward slash).
-- `LOKALISE_FILE_FORMAT` — Translation file format. For example, if you're using JSON files, enter `json` (without a leading dot).
-- `LOKALISE_PROJECT_ID` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general).
-- `LOKALISE_SOURCE_LANG` — Project base language. For example, if your base language is English, enter `en`.
-- `LOKALISE_BRANCH_MARKER` — This parameter is mandatory only if you're using pull actions. The value entered will become part of the branch name to create the pull request from. For example, you can enter `lok`.
-- `GIT_UPSTREAM_BRANCH` — Mandatory only if you're using push actions with branches. Provide the branch name to use as upstream. For example, enter `main` or `master`.
-
-### Optional workflow parameters
-
-Optional parameters are set the same way as the mandatory ones:
-
-- `LOKALISE_PULL_ADDITIONAL_PARAMS` — Any additional parameters to pass to the Lokalise CLI when pulling files. For example, to manage indentation, enter `--indentation 2sp`. You can enter multiple CLI arguments if needed.
-- `LOKALISE_PUSH_ADDITIONAL_PARAMS` — Any additional parameters to pass to the Lokalise CLI when pushing files. For example, to convert placeholders to universal ones and run automations, enter `--convert-placeholders --use-automations`. You can enter multiple CLI arguments if needed.
-
-### Setting up permissions
-
-1. Go to your repository's **Settings**.
-2. Navigate to **Actions > General**.
-3. Under **Workflow permissions**, ensure the setting is set to **Read and write permissions**.
-
-If you're planning to use pull actions to create pull requests, also make sure to tick **Allow GitHub Actions to create and approve pull requests** on the same page (under "Choose whether GitHub Actions can create pull requests or submit approving pull request reviews").
+- `api_token` — Lokalise API token, see above
+- `project_id` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general)
+- `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, enter `locales` (without a leading forward slash).
+- `file_format` — Translation file format. For example, if you're using JSON files, enter `json` (without a leading dot).
 
 ## Running the workflows
 
@@ -77,38 +157,9 @@ locales/
 
 When managing your translation keys on Lokalise, ensure proper filenames are assigned to these keys. The filenames should match the structure in your repository. For example, if you store translations under `locales/%LANG_ISO%/`, then the filename assigned to the corresponding key must be `locales/%LANG_ISO%/TRANSLATION_FILE_NAME`.
 
-### Default parameters for the push action
-
-By default, the following command-line parameters are set when uploading files to Lokalise:
-
-- `--token` — Read from the `LOKALISE_API_TOKEN` secret.
-- `--project-id` — Read from the `LOKALISE_PROJECT_ID` variable.
-- `--file` — The currently uploaded file.
-- `--lang-iso` — The language ISO of the translation file.
-- `--replace-modified`
-- `--include-path`
-- `--distinguish-by-file`
-- `--poll`
-- `--poll-timeout` — Set to `120s`.
-- `--tag-inserted-keys`
-- `--tag-skipped-keys=true`
-- `--tag-updated-keys`
-- `--tags` — Set to the branch name that triggered the workflow.
-
-### Default parameters for the pull action
-
-By default, the following command-line parameters are set when downloading files from Lokalise:
-
-- `--token` — Read from the `LOKALISE_API_TOKEN` secret.
-- `--project-id` — Read from the `LOKALISE_PROJECT_ID` variable.
-- `--format` — Read from the `LOKALISE_FILE_FORMAT` variable.
-- `--original-filenames` — Set to `true`.
-- `--directory-prefix` — Set to `/`.
-- `--include-tags` — Set to the branch name that triggered the workflow.
-
 ## Note on cron jobs
 
-You can easily schedule your workflows using cron ([POSIX syntax](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07)). To do that, add a new `schedule` event:
+You can easily schedule your workflows using cron ([POSIX syntax](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07)). To do that, add a new `schedule` event.
 
 ```yaml
 on:
@@ -116,11 +167,11 @@ on:
     - cron: "0 0 * * *"
 ```
 
-In this example, the workflow will now run every day at midnight. If you need help creating the right schedule, check out this [cron expression generator](https://crontab.guru/).
+In this example, the workflow will run every day at midnight. If you need help creating the right schedule, check out this [cron expression generator](https://crontab.guru/).
 
 A few things to keep in mind:
 
-* Scheduled workflows always run on the latest commit from the default or base branch.
-* The minimum interval for running scheduled workflows is every 5 minutes.
-* You can use `if` conditions to skip specific times: `if: github.event.schedule != '30 5 * * 1,3'`.
-* Watch out for [GitHub Actions quotas](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions). On the Free plan, you get 2000 minutes per month.
+- Scheduled workflows always run on the latest commit from the default or base branch.
+- The minimum interval for running scheduled workflows is every 5 minutes.
+- You can use `if` conditions to skip specific times: `if: github.event.schedule != '30 5 * * 1,3'`.
+- Watch out for [GitHub Actions quotas](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions). On the Free plan, you get 2000 minutes per month.
