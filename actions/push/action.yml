@@ -60,6 +60,8 @@ runs:
       run: |
         ALL_FILES=$(find "${{ inputs.translations_path }}/${{ inputs.base_lang }}" -name "*.${{ inputs.file_format }}" -type f | tr '\n' ' ')
         
+        echo "Found files: $ALL_FILES"
+
         if [ -z "$ALL_FILES" ]; then
           echo "No translation files found."
           echo "has_files=false" >> $GITHUB_OUTPUT
