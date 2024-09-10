@@ -48,7 +48,7 @@ runs:
   
     - name: Get changed files
       id: changed-files
-      if: steps.check-first-run.first_run == 'false'
+      if: steps.check-first-run.outputs.first_run == 'false'
       uses: tj-actions/changed-files@v44
       with:
         files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
@@ -70,7 +70,7 @@ runs:
         fi
 
     - name: Install Lokalise CLI
-      if: steps.check-first-run.first_run == 'true' || steps.changed-files.outputs.any_changed == 'true'
+      if: steps.check-first-run.outputs.first_run == 'true' || steps.changed-files.outputs.any_changed == 'true'
       shell: bash
       run: |
         chmod +x "${{ github.action_path }}/../../src/scripts/install_lokalise_cli.sh"
@@ -88,6 +88,11 @@ runs:
           ALL_FILES="${{ steps.find-files.outputs.ALL_FILES }}"
         else
           ALL_CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+        fi
+
+        if [ -z "${ALL_FILES}" ] && [ -z "${ALL_CHANGED_FILES}" ]; then
+          echo "No files to upload."
+          exit 0
         fi
         
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
