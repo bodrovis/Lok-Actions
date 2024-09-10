@@ -45,12 +45,7 @@ runs:
         else
           echo "first_run=true" >> $GITHUB_OUTPUT
         fi
-      
-    - name: Debug first_run output
-      shell: bash
-      run: |
-        echo "First run: ${{ steps.check-first-run.outputs.first_run }}"
-
+  
     - name: Get changed files
       id: changed-files
       if: steps.check-first-run.first_run == 'false'
@@ -71,7 +66,7 @@ runs:
           echo "No translation files found."
           echo "has_files=false" >> $GITHUB_OUTPUT
         else
-          echo "ALL_FILES=$ALL_FILES" >> $GITHUB_ENV
+          echo "ALL_FILES=$ALL_FILES" >> $GITHUB_OUTPUT
           echo "has_files=true" >> $GITHUB_OUTPUT
         fi
 
