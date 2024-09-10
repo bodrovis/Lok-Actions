@@ -38,7 +38,7 @@ runs:
       id: check-first-run
       shell: bash
       run: |
-        git fetch origin
+        git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --depth=100
 
         if git log origin/${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --oneline | grep -q '\[Lokalise-Upload-Complete\]'; then
           echo "first_run=false" >> $GITHUB_OUTPUT
