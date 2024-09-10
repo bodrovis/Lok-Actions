@@ -46,6 +46,11 @@ runs:
           echo "first_run=true" >> $GITHUB_OUTPUT
         fi
       
+    - name: Debug first_run output
+      shell: bash
+      run: |
+        echo "First run: ${{ steps.check-first-run.outputs.first_run }}"
+
     - name: Get changed files
       id: changed-files
       if: steps.check-first-run.first_run == 'false'
