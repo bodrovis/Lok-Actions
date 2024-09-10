@@ -29,12 +29,20 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+      with:
+        files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
+
     - name: Detect Triggering Branch
+      if: steps.changed-files.outputs.any_changed == 'false'
       id: detect-branch
       shell: bash
       run: echo "TRIGGERING_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
     - name: Check if this is the first run on the branch
+      if: steps.changed-files.outputs.any_changed == 'false'
       id: check-first-run
       shell: bash
       run: |
@@ -45,17 +53,10 @@ runs:
         else
           echo "first_run=true" >> $GITHUB_OUTPUT
         fi
-  
-    - name: Get changed files
-      id: changed-files
-      if: steps.check-first-run.outputs.first_run == 'false'
-      uses: tj-actions/changed-files@v44
-      with:
-        files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
 
     - name: Find all translation files
+      if: steps.changed-files.outputs.any_changed == 'false' && steps.check-first-run.outputs.first_run == 'true'
       id: find-files
-      if: steps.check-first-run.outputs.first_run == 'true'
       shell: bash
       run: |
         ALL_FILES=$(find "${{ inputs.translations_path }}/${{ inputs.base_lang }}" -name "*.${{ inputs.file_format }}" -type f | tr '\n' ' ')
