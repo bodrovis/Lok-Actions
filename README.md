@@ -126,8 +126,10 @@ The following parameters are **required for every workflow**:
 
 - `api_token` — Lokalise API token, see above
 - `project_id` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general)
-- `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, enter `locales` (without a leading forward slash).
-- `file_format` — Translation file format. For example, if you're using JSON files, enter `json` (without a leading dot).
+- `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, enter `locales` (**without** a leading and trailing forward slashes).
+- `file_format` — Translation file format. For example, if you're using JSON files, enter `json` (**without** a leading dot).
+
+The final path to the translations is constructed in the following way: `TRANSLATIONS_PATH/LOCALE/**.FILE_FORMAT"`.
 
 ## Running the workflows
 
