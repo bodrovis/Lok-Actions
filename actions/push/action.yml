@@ -55,11 +55,10 @@ runs:
 
     - name: Find all translation files
       id: find-files
-      if: steps.check-first-run.first_run == 'true'
+      if: steps.check-first-run.outputs.first_run == 'true'
       shell: bash
       run: |
         ALL_FILES=$(find "${{ inputs.translations_path }}/${{ inputs.base_lang }}" -name "*.${{ inputs.file_format }}" -type f | tr '\n' ' ')
-        
         echo "Found files: $ALL_FILES"
 
         if [ -z "$ALL_FILES" ]; then
@@ -93,7 +92,8 @@ runs:
         
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
 
-        echo "$ALL_FILES" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}"
+        # Pass ALL_FILES or ALL_CHANGED_FILES
+        echo "${ALL_FILES:-$ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}"
 
         if [ $? -ne 0 ]; then
           echo "File upload failed"
