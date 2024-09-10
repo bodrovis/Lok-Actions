@@ -40,7 +40,7 @@ To use this action, you must configure the following mandatory parameters: `api_
 
 Optional parameters include:
 
-- `additional_params` — Any additional parameters to pass to the Lokalise CLI when pulling files. For example, you might use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be used as needed: `--indentation 2sp --placeholder-format icu`.
+- `additional_params` — Any additional parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you might use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be used as needed: `--indentation 2sp --placeholder-format icu`.
 - `temp_branch_prefix` — Prefix for the temporary branch used to create the pull request. The entered value becomes part of the branch name for the pull request. For example, you can use `lok`. The default is `lok`.
 
 ### Permissions
