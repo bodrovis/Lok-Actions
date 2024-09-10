@@ -40,7 +40,7 @@ runs:
       run: |
         git fetch origin
 
-        if git log origin/${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --oneline | grep -q '[Lokalise-Upload-Complete]'; then
+        if git log origin/${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --oneline | grep -q '\[Lokalise-Upload-Complete\]'; then
           echo "first_run=false" >> $GITHUB_OUTPUT
         else
           echo "first_run=true" >> $GITHUB_OUTPUT
