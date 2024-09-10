@@ -33,7 +33,7 @@ runs:
       id: changed-files
       uses: tj-actions/changed-files@v44
       with:
-        files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**.${{ inputs.file_format }}"
+        files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
 
     - name: Install Lokalise CLI
       if: steps.changed-files.outputs.any_changed == 'true'
