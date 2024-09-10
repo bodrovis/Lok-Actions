@@ -38,14 +38,8 @@ runs:
       id: check-first-run
       shell: bash
       run: |
-        # Fetch full commit history or at least more than the default shallow depth
         git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --depth=100
 
-        # Debugging: Print the log for visibility
-        echo "Printing git log:"
-        git log --oneline --decorate --graph --all
-
-        # Check if the Lokalise-Upload-Complete commit is there using fgrep
         if git log --oneline | fgrep -q '[Lokalise-Upload-Complete]'; then
           echo "first_run=false" >> $GITHUB_OUTPUT
         else
@@ -111,11 +105,11 @@ runs:
           exit 1
         fi
 
-    # - name: Mark Lokalise upload as complete
-    #   if: steps.check-first-run.outputs.first_run == 'true'
-    #   shell: bash
-    #   run: |
-    #     git config --global user.name "${GITHUB_ACTOR}"
-    #     git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-    #     git commit --allow-empty -m "[Lokalise-Upload-Complete]"
-    #     git push origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }}
+    - name: Mark Lokalise upload as complete
+      if: steps.check-first-run.outputs.first_run == 'true'
+      shell: bash
+      run: |
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        git commit --allow-empty -m "[Lokalise-Upload-Complete]"
+        git push origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }}
