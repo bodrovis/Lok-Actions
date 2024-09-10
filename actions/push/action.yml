@@ -31,10 +31,12 @@ runs:
   steps:
     - name: Detect Triggering Branch
       id: detect-branch
+      shell: bash
       run: echo "TRIGGERING_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
     - name: Check if this is the first run on the branch
       id: check-first-run
+      shell: bash
       run: |
         git fetch origin
 
@@ -98,6 +100,7 @@ runs:
 
     - name: Mark Lokalise upload as complete
       if: steps.check-first-run.outputs.first_run == 'true'
+      shell: bash
       run: |
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
