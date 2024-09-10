@@ -40,7 +40,7 @@ To use this action, you need to configure the following mandatory parameters: `a
 
 Optional parameters include:
 
-- `additional_params` — Any additional parameters to pass to the Lokalise CLI when pushing files. For example, you might use `--convert-placeholders` to manage indentation. Multiple CLI arguments can be used as needed.
+- `additional_params` — Any additional parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you might use `--convert-placeholders` to manage indentation. Multiple CLI arguments can be used as needed.
 
 ## Technical details
 
