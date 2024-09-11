@@ -120,16 +120,16 @@ First, you'll need to generate a read/write [Lokalise API token](https://docs.lo
 
 ### Mandatory workflow parameters
 
-You'll also need to provide some mandatory parameters for the workflows. These can be set as environment variables, secrets, or passed directly.
+You'll need to provide some mandatory parameters for the workflows. These can be set as environment variables, secrets, or passed directly.
 
 The following parameters are **required for every workflow**:
 
-- `api_token` — Lokalise API token, see above
-- `project_id` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general)
-- `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, enter `locales` (**without** a leading and trailing forward slashes).
-- `file_format` — Translation file format. For example, if you're using JSON files, enter `json` (**without** a leading dot).
+- `api_token` — Lokalise API token (check the instructions above).
+- `project_id` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general).
+- `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, use `locales` (leave out leading and trailing slashes).
+- `file_format` — Translation file format. For example, if you're using JSON files, just put `json` (no leading dot needed).
 
-The final path to the translations is constructed in the following way: `TRANSLATIONS_PATH/LOCALE/**.FILE_FORMAT"`.
+The full path to the translations is built like this: `TRANSLATIONS_PATH/LOCALE/**/**.FILE_FORMAT`.
 
 ## Running the workflows
 
@@ -145,7 +145,7 @@ To run a workflow:
 
 ### Translation files
 
-This workflow assumes that inside the translation folder (provided using the `LOKALISE_TRANSLATIONS_PATH`), you have nested folders named after your project locales. For example, if your `LOKALISE_SOURCE_LANG` is set to `en`, there should be a folder with the same name. Here's a sample directory structure:
+This workflow assumes that inside the translation folder (set with the `translations_path` option), there are nested folders named after your project locales. For example, if your base language is `en`, there should be a folder with that name. Here's a sample directory structure:
 
 ```
 locales/
@@ -157,7 +157,15 @@ locales/
     └── admin.json
 ```
 
-When managing your translation keys on Lokalise, ensure proper filenames are assigned to these keys. The filenames should match the structure in your repository. For example, if you store translations under `locales/%LANG_ISO%/`, then the filename assigned to the corresponding key must be `locales/%LANG_ISO%/TRANSLATION_FILE_NAME`.
+When managing translation keys on Lokalise, make sure the filenames match your repository structure. If you store translations under `locales/%LANG_ISO%/`, the filenames assigned to the keys must follow this structure: `locales/%LANG_ISO%/TRANSLATION_FILE_NAME`.
+
+Nested folders are also supported. For example: `locales/en/nested_folder/main.json`.
+
+### Tags
+
+Every translation key uploaded to Lokalise via the Push action automatically gets a tag based on the branch that triggered the workflow. For instance, if the workflow is triggered by the `lokalise-hub` branch, all affected keys will have a `lokalise-hub` tag.
+
+When using the Pull action to download translation keys to your GitHub repo, it will filter keys by the tag that matches the branch name. So, if you run the Pull action from the `lokalise-hub` branch, only keys with the matching tag will be downloaded; others will be ignored. To ensure all relevant keys are included in the workflow, it's important to keep these tags. If a tag is removed by mistake, you can always add it back through the Lokalise UI.
 
 ## Note on cron jobs
 
