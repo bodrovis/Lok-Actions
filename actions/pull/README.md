@@ -36,12 +36,17 @@ jobs:
 
 ### Parameters
 
-To use this action, you must configure the following mandatory parameters: `api_token`, `project_id`, `translations_path`, and `file_format`. Refer to the [General setup](../../README.md#general-setup) section for details on these parameters.
+The following mandatory parameters are covered in the [General setup](../../README.md#general-setup):
+
+- **`api_token`** — Lokalise API token.
+- **`project_id`** — Your Lokalise project ID.
+- **`translations_path`** — Path to your translation files.
+- **`file_format`** — The format of your translation files.
 
 Optional parameters include:
 
-- `additional_params` — Any additional parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you might use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be used as needed: `--indentation 2sp --placeholder-format icu`.
-- `temp_branch_prefix` — Prefix for the temporary branch used to create the pull request. The entered value becomes part of the branch name for the pull request. For example, you can use `lok`. The default is `lok`.
+- **`additional_params`** — Extra parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you can use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be added, like: `--indentation 2sp --placeholder-format icu`.
+- **`temp_branch_prefix`** — A prefix for the temporary branch used to create the pull request. This value will be part of the branch name. For example, using `lok` will result in a branch name starting with `lok`. The default value is `lok`.
 
 ### Permissions
 
