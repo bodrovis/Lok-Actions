@@ -36,11 +36,20 @@ jobs:
 
 ### Parameters
 
-To use this action, you need to configure the following mandatory parameters: `api_token`, `project_id`, `translations_path`, and `file_format`. Refer to the [General setup](../../README.md#general-setup) section for details on these parameters. Additionally, you must specify `base_lang`, which is the base language of your project (e.g., `en` for English).
+The following mandatory parameters are covered in the [General setup](../../README.md#general-setup):
+
+- **`api_token`** — Lokalise API token.
+- **`project_id`** — Your Lokalise project ID.
+- **`translations_path`** — Path to your translation files.
+- **`file_format`** — The format of your translation files.
+
+In addition to the above, there are other mandatory parameters:
+
+- **`base_lang`** — The base language of your project (e.g., `en` for English). Be mindful of regional codes! If your base language is French Canada (`fr_CA`), you must provide the exact value for `base_lang`. Also, ensure the nested folder under `translations_path` is named `fr_CA`. For more details on file organization, check the [Translation files](../../README.md#translation-files) section.
 
 Optional parameters include:
 
-- `additional_params` — Any additional parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you might use `--convert-placeholders` to manage indentation. Multiple CLI arguments can be used as needed.
+- **`additional_params`** — Extra parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you can use `--convert-placeholders` to handle placeholders. You can include multiple CLI arguments as needed.
 
 ## Technical details
 
