@@ -124,14 +124,27 @@ runs:
         github-token: ${{ github.token }}
         script: |
           try {
-            await github.rest.pulls.create({
+            const { data: pullRequests } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: "Lokalise translations update",
-              head: "${{ env.branch_name }}",
-              base: "${{ github.ref_name }}",
-              body: "This PR updates translations from Lokalise.",
+              head: `${context.repo.owner}:${env.branch_name}`,
+              base: github.ref_name,
+              state: 'open'
             });
+
+            if (pullRequests.length > 0) {
+              console.log(`PR already exists: ${pullRequests[0].html_url}`);
+            } else {
+              const { data: newPr } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: "Lokalise translations update",
+                head: env.branch_name,
+                base: github.ref_name,
+                body: "This PR updates translations from Lokalise.",
+              });
+              console.log(`Created new PR: ${newPr.html_url}`);
+            }
           } catch (error) {
-            core.setFailed(`Failed to create pull request: ${error.message}`);
+            core.setFailed(`Failed to create or update pull request: ${error.message}`);
           }
