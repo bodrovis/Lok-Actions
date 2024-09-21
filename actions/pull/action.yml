@@ -75,13 +75,13 @@ runs:
         STATUS_CMD=$(git status "locales/**/*.json" --untracked-files=no --porcelain)
         status_code=$?
         echo "git status exit code: $status_code"
-        
+
         echo "Preparing git status command"
 
         if [[ "${{ inputs.always_pull_base }}" == "true" ]]; then
           STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain)
         else
-          STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain | grep -v "${{ inputs.translations_path }}/${{ inputs.base_lang }}")
+          STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain | grep -v "${{ inputs.translations_path }}/${{ inputs.base_lang }}" || true)
         fi
 
         echo "Checking for changes"
