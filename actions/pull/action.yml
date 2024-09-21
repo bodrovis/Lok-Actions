@@ -78,19 +78,19 @@ runs:
 
         if [[ "${{ inputs.always_pull_base }}" == "true" ]]; then
           STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain)
+          UNTRACKED_FILES=$(git ls-files --others --exclude-standard "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}")
         else
           STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain | grep -v "${{ inputs.translations_path }}/${{ inputs.base_lang }}" || true)
+          UNTRACKED_FILES=$(git ls-files --others --exclude-standard "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" | grep -v "${{ inputs.translations_path }}/${{ inputs.base_lang }}" || true)
         fi
 
-        if [[ -z "$STATUS_CMD" ]]; then
+        if [[ -z "$STATUS_CMD" && -z "$UNTRACKED_FILES" ]]; then
           echo "No translation file changes detected after pulling from Lokalise"
           echo "has_changes=false" >> $GITHUB_OUTPUT
         else
           echo "Translation file changes detected after pulling from Lokalise"
           echo "has_changes=true" >> $GITHUB_OUTPUT
         fi
-
-        echo "Changes checked"
 
     - name: Commit and push changes
       id: commit-and-push
