@@ -44,6 +44,9 @@ download_files() {
             echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
             sleep $sleep_time
             sleep_time=$((sleep_time * 2))
+        elif echo "$output" | grep -q 'API request error 406'; then
+            echo "API request error 406: No keys for export with current export settings. Exiting..."
+            return 0
         else
             echo "Error encountered during download: $output"
             return 1
