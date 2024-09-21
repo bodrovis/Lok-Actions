@@ -48,7 +48,9 @@ runs:
       run: |
         git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --depth=100
 
-        if git log --oneline | fgrep -q '[Lokalise-Upload-Complete]'; then
+        git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --tags
+
+        if git tag | grep -q 'lokalise-upload-complete'; then
           echo "first_run=false" >> $GITHUB_OUTPUT
         else
           echo "first_run=true" >> $GITHUB_OUTPUT
@@ -110,7 +112,9 @@ runs:
       if: steps.check-first-run.outputs.first_run == 'true'
       shell: bash
       run: |
-        git config --global user.name "${GITHUB_ACTOR}"
-        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        git commit --allow-empty -m "[Lokalise-Upload-Complete]"
-        git push origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }}
+        # git config --global user.name "${GITHUB_ACTOR}"
+        # git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        # git commit --allow-empty -m "[Lokalise-Upload-Complete]"
+        # git push origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }}
+        git tag -a "lokalise-upload-complete" -m "First Lokalise upload complete"
+        git push origin "lokalise-upload-complete"

@@ -99,6 +99,7 @@ The following parameters are **required for every workflow**:
 - `project_id` — Your [Lokalise project ID](https://docs.lokalise.com/en/articles/2136085-project-settings#general).
 - `translations_path` — Path to your translations. For example, if your translations are stored in the `locales` folder at the project root, use `locales` (leave out leading and trailing slashes).
 - `file_format` — Translation file format. For example, if you're using JSON files, just put `json` (no leading dot needed).
+- `base_lang` — The base language of your project (e.g., `en` for English). Be mindful of regional codes! If your base language is French Canada (`fr_CA`), you must provide the exact value for `base_lang`. Also, ensure the nested folder under `translations_path` is named `fr_CA`. For more details on file organization, check the [Translation files](../../README.md#translation-files) section.
 
 The full path to the translations is built like this: `TRANSLATIONS_PATH/LOCALE/**/**.FILE_FORMAT`.
 

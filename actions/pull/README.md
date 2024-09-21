@@ -38,15 +38,17 @@ jobs:
 
 The following mandatory parameters are covered in the [General setup](../../README.md#general-setup):
 
-- **`api_token`** — Lokalise API token.
-- **`project_id`** — Your Lokalise project ID.
-- **`translations_path`** — Path to your translation files.
-- **`file_format`** — The format of your translation files.
+- `api_token` — Lokalise API token.
+- `project_id` — Your Lokalise project ID.
+- `translations_path` — Path to your translation files.
+- `file_format` — The format of your translation files.
+- `base_lang` — Your project base language.
 
 Optional parameters include:
 
-- **`additional_params`** — Extra parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you can use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be added, like: `--indentation 2sp --placeholder-format icu`.
-- **`temp_branch_prefix`** — A prefix for the temporary branch used to create the pull request. This value will be part of the branch name. For example, using `lok` will result in a branch name starting with `lok`. The default value is `lok`.
+- `additional_params` — Extra parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you can use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be added, like: `--indentation 2sp --placeholder-format icu`.
+- `temp_branch_prefix` — A prefix for the temporary branch used to create the pull request. This value will be part of the branch name. For example, using `lok` will result in a branch name starting with `lok`. The default value is `lok`.
+- `always_pull_base` — By default, changes in the base language translation files (defined by the `base_lang` option) are ignored when checking for updates. Set this option to `true` to include changes in the base language translations in the pull request. The default value is `false`.
 
 ### Permissions
 

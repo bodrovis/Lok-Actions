@@ -38,14 +38,11 @@ jobs:
 
 The following mandatory parameters are covered in the [General setup](../../README.md#general-setup):
 
-- **`api_token`** — Lokalise API token.
-- **`project_id`** — Your Lokalise project ID.
-- **`translations_path`** — Path to your translation files.
-- **`file_format`** — The format of your translation files.
-
-In addition to the above, there are other mandatory parameters:
-
-- **`base_lang`** — The base language of your project (e.g., `en` for English). Be mindful of regional codes! If your base language is French Canada (`fr_CA`), you must provide the exact value for `base_lang`. Also, ensure the nested folder under `translations_path` is named `fr_CA`. For more details on file organization, check the [Translation files](../../README.md#translation-files) section.
+- `api_token` — Lokalise API token.
+- `project_id` — Your Lokalise project ID.
+- `translations_path` — Path to your translation files.
+- `file_format` — The format of your translation files.
+- `base_lang` — Your project base language.
 
 Optional parameters include:
 

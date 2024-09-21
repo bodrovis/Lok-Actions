@@ -91,8 +91,9 @@ runs:
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-        SHORT_SHA=${GITHUB_SHA::6}  
-        BRANCH_NAME="${{ inputs.temp_branch_prefix }}_${{ github.ref_name }}_$SHORT_SHA"
+        TIMESTAMP=$(date +%s)
+        BRANCH_NAME="${{ inputs.temp_branch_prefix }}_${{ github.ref_name }}_${SHORT_SHA}_${TIMESTAMP}"
+        BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -cd '[:alnum:]_-')
 
         echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
