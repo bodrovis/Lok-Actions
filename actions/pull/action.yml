@@ -67,6 +67,15 @@ runs:
           exit 1
         fi
 
+        echo "Checking if translation files exist"
+        ls locales/**/*.json || echo "No translation files found"
+
+
+        echo "Running git status"
+        STATUS_CMD=$(git status "locales/**/*.json" --untracked-files=no --porcelain)
+        status_code=$?
+        echo "git status exit code: $status_code"
+        
         echo "Preparing git status command"
 
         if [[ "${{ inputs.always_pull_base }}" == "true" ]]; then
