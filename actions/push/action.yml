@@ -112,9 +112,7 @@ runs:
       if: steps.check-first-run.outputs.first_run == 'true'
       shell: bash
       run: |
-        # git config --global user.name "${GITHUB_ACTOR}"
-        # git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        # git commit --allow-empty -m "[Lokalise-Upload-Complete]"
-        # git push origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }}
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
         git tag -a "lokalise-upload-complete" -m "First Lokalise upload complete"
         git push origin "lokalise-upload-complete"
