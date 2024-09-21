@@ -61,6 +61,14 @@ When triggered, this action performs the following steps:
 2. Uploads modified translation files to the specified project in parallel, handling up to six requests simultaneously.
 3. Each translation key is tagged with the name of the branch that triggered the workflow.
 
+If no changes have been detected in step 1, the following logic applies:
+
+1. The action checks if this is the first run on the triggering branch. To achieve that, it searches for a `[Lokalise-Upload-Complete]` commit.
+   - If this commit is found, it means that the initial push has already been completed. The action will then exit.
+2. If the commit is not found, the action will perform an initial push to Lokalise by uploading all translation files for the base language.
+3. The action creates an empty `[Lokalise-Upload-Complete]` commit, indicating that the initial setup has been successfully completed.
+   - It is heavily recommended to pull changes from the triggering branch to your local repo to include this commit into your local history.
+
 For more information on assumptions, refer to the [Assumptions and defaults](../../README.md#assumptions-and-defaults) section.
 
 ### Default parameters for the push action

@@ -9,6 +9,10 @@ inputs:
   project_id:
     description: 'Project ID for Lokalise'
     required: true
+  base_lang:
+    description: 'Base language (e.g., en, fr_FR)'
+    required: true
+    default: 'en'
   translations_path:
     description: 'Path to translation files'
     required: true
@@ -25,6 +29,10 @@ inputs:
     description: 'Prefix for the temp branch to create pull request'
     required: false
     default: 'lok'
+  always_pull_base:
+    description: 'By default, changes in the base language translation files are ignored. Set this to true to include base language translations in the PR.'
+    required: false
+    default: false
 
 branding:
   icon: 'download-cloud'
@@ -59,7 +67,13 @@ runs:
           exit 1
         fi
 
-        if [[ -z $(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain) ]]; then
+        if [[ "${{ inputs.always_pull_base }}" == "true" ]]; then
+          STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain)
+        else
+          STATUS_CMD=$(git status "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --untracked-files=no --porcelain | grep -v "${{ inputs.translations_path }}/${{ inputs.base_lang }}")
+        fi
+
+        if [[ -z "$STATUS_CMD" ]]; then
           echo "No translation file changes detected after pulling from Lokalise"
           echo "has_changes=false" >> $GITHUB_OUTPUT
         else

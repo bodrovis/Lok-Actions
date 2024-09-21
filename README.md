@@ -2,39 +2,10 @@
 
 This collection of GitHub Actions helps you exchange translation files between Lokalise "Web and mobile" projects and GitHub repositories. It includes the following actions:
 
-- **Initial push:** Upload all translation files (for the base language) from GitHub to Lokalise.
 - **Push:** Upload new or updated translation files (for the base language) from GitHub to Lokalise.
-- **Pull:** Download translation files (for all languages) from Lokalise to GitHub as a pull request.
+- **Pull:** Download translation files from Lokalise to GitHub as a pull request.
 
 ## Quickstart
-
-**[Initial push (push all translation files to Lokalise)](./actions/initial_push/README.md):**
-
-```yaml
-name: Initial full push with tags
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Push to Lokalise
-        uses: bodrovis/Lok-Actions/actions/initial_push@master
-        with:
-          api_token: ${{ secrets.LOKALISE_API_TOKEN }}
-          project_id: LOKALISE_PROJECT_ID
-          base_lang: BASE_LANG_ISO
-          translations_path: TRANSLATIONS_PATH
-          file_format: FILE_FORMAT
-          additional_params: ADDITIONAL_CLI_PARAMS
-```
 
 **[Push new/updated translation files to Lokalise](./actions/push/README.md):**
 
