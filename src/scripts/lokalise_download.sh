@@ -2,18 +2,28 @@
 
 download_files() {
     local project_id_with_branch=$1
+    local token=$2
     local additional_params="${CLI_ADD_PARAMS:-}"
     local attempt=0
-    local max_retries=3
-    local sleep_time=1
+    local max_retries="${MAX_RETRIES:-5}"
+    local sleep_time="${SLEEP_TIME:-1}"
+    local max_total_time=300
+    local start_time=$(date +%s)
 
     echo "Starting download for project: $project_id_with_branch"
     while [ $attempt -lt $max_retries ]; do
+        current_time=$(date +%s)
+        elapsed_time=$((current_time - start_time))
+        if [ $elapsed_time -ge $max_total_time ]; then
+            echo "Max retry time exceeded. Exiting."
+            return 1
+        fi
+
         echo "Attempt $((attempt + 1)) of $max_retries"
 
         set +e  # Temporarily disable exit on error
 
-        output=$(./bin/lokalise2 --token="${LOKALISE_TOKEN}" \
+        output=$(./bin/lokalise2 --token="$token" \
             --project-id="$project_id_with_branch" \
             file download \
             --format="${FILE_FORMAT}" \

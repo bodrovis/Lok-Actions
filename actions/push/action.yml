@@ -25,6 +25,14 @@ inputs:
     description: 'Additional parameters for Lokalise CLI on push'
     required: false
     default: ''
+  max_retries:
+    description: 'Maximum number of retries on rate limit errors'
+    required: false
+    default: 3
+  sleep_on_retry:
+    description: 'Number of seconds to sleep before retrying'
+    required: false
+    default: 1
 
 runs:
   using: "composite"
@@ -35,22 +43,12 @@ runs:
       with:
         files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
 
-    - name: Detect Triggering Branch
-      if: steps.changed-files.outputs.any_changed == 'false'
-      id: detect-branch
-      shell: bash
-      run: echo "TRIGGERING_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-
     - name: Check if this is the first run on the branch
       if: steps.changed-files.outputs.any_changed == 'false'
       id: check-first-run
       shell: bash
       run: |
-        git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --depth=100
-
-        git fetch origin ${{ steps.detect-branch.outputs.TRIGGERING_BRANCH }} --tags
-
-        if git tag | grep -q 'lokalise-upload-complete'; then
+        if git rev-parse "refs/tags/lokalise-upload-complete" >/dev/null 2>&1; then
           echo "first_run=false" >> $GITHUB_OUTPUT
         else
           echo "first_run=true" >> $GITHUB_OUTPUT
@@ -62,7 +60,6 @@ runs:
       shell: bash
       run: |
         ALL_FILES=$(find "${{ inputs.translations_path }}/${{ inputs.base_lang }}" -name "*.${{ inputs.file_format }}" -type f | tr '\n' ' ')
-        echo "Found files: $ALL_FILES"
 
         if [ -z "$ALL_FILES" ]; then
           echo "No translation files found."
@@ -83,8 +80,9 @@ runs:
       if: steps.check-first-run.outputs.first_run == 'true' || steps.changed-files.outputs.any_changed == 'true'
       shell: bash
       env:
-        LOKALISE_TOKEN: ${{ inputs.api_token }}
         CLI_ADD_PARAMS: ${{ inputs.additional_params }}
+        MAX_RETRIES: ${{ inputs.max_retries }}
+        SLEEP_TIME: ${{ inputs.sleep_on_retry }}
         BASE_LANG: ${{ inputs.base_lang }}
       run: |
         if [ "${{ steps.check-first-run.outputs.first_run }}" == "true" ]; then
@@ -101,8 +99,7 @@ runs:
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
 
         # Pass ALL_FILES or ALL_CHANGED_FILES
-        echo "${ALL_FILES:-$ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}"
-
+        echo "${ALL_FILES:-$ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}" "${{ inputs.api_token }}"
         if [ $? -ne 0 ]; then
           echo "File upload failed"
           exit 1
@@ -114,5 +111,9 @@ runs:
       run: |
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        git tag -a "lokalise-upload-complete" -m "First Lokalise upload complete"
-        git push origin "lokalise-upload-complete"
+        if ! git rev-parse "refs/tags/lokalise-upload-complete" >/dev/null 2>&1; then
+          git tag -a "lokalise-upload-complete" -m "First Lokalise upload complete"
+          git push origin "lokalise-upload-complete"
+        else
+          echo "Tag 'lokalise-upload-complete' already exists."
+        fi

@@ -47,6 +47,8 @@ The following mandatory parameters are covered in the [General setup](../../READ
 Optional parameters include:
 
 - `additional_params` — Extra parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you can use `--convert-placeholders` to handle placeholders. You can include multiple CLI arguments as needed.
+* `max_retries` — Maximum number of retries on rate limit errors (HTTP 429). The default value is `3`.
+* `sleep_on_retry` — Number of seconds to sleep before retrying on rate limit errors. The default value is `1`.
 
 ## Technical details
 

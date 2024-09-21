@@ -49,6 +49,8 @@ Optional parameters include:
 - `additional_params` — Extra parameters to pass to the [Lokalise CLI when pulling files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_download.md). For example, you can use `--indentation 2sp` to manage indentation. Multiple CLI arguments can be added, like: `--indentation 2sp --placeholder-format icu`.
 - `temp_branch_prefix` — A prefix for the temporary branch used to create the pull request. This value will be part of the branch name. For example, using `lok` will result in a branch name starting with `lok`. The default value is `lok`.
 - `always_pull_base` — By default, changes in the base language translation files (defined by the `base_lang` option) are ignored when checking for updates. Set this option to `true` to include changes in the base language translations in the pull request. The default value is `false`.
+* `max_retries` — Maximum number of retries on rate limit errors (HTTP 429). The default value is `3`.
+* `sleep_on_retry` — Number of seconds to sleep before retrying on rate limit errors. The default value is `1`.
 
 ### Permissions
 

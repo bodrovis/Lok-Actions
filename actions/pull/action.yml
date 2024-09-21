@@ -33,6 +33,14 @@ inputs:
     description: 'By default, changes in the base language translation files are ignored. Set this to true to include base language translations in the PR.'
     required: false
     default: false
+  max_retries:
+    description: 'Maximum number of retries on rate limit errors'
+    required: false
+    default: 3
+  sleep_on_retry:
+    description: 'Number of seconds to sleep before retrying'
+    required: false
+    default: 1
 
 branding:
   icon: 'download-cloud'
@@ -51,15 +59,16 @@ runs:
       id: pull-files
       shell: bash
       env:
-        LOKALISE_TOKEN: ${{ inputs.api_token }}
         CLI_ADD_PARAMS: ${{ inputs.additional_params }}
+        MAX_RETRIES: ${{ inputs.max_retries }}
+        SLEEP_TIME: ${{ inputs.sleep_on_retry }}
         FILE_FORMAT: ${{ inputs.file_format }}
       run: |
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_download.sh"
 
         . "${{ github.action_path }}/../../src/scripts/lokalise_download.sh"
         
-        download_files "${{ inputs.project_id }}"
+        download_files "${{ inputs.project_id }}" "${{ inputs.api_token }}"
               
         if [ $? -ne 0 ]; then
           echo "Error during file download"
@@ -93,8 +102,8 @@ runs:
 
         TIMESTAMP=$(date +%s)
         SHORT_SHA=${GITHUB_SHA::6}
-        BRANCH_NAME="${{ inputs.temp_branch_prefix }}_${{ github.ref_name }}_${SHORT_SHA}_${TIMESTAMP}"
-        BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -cd '[:alnum:]_-')
+        BRANCH_NAME="${{ inputs.temp_branch_prefix }}_${GITHUB_REF_NAME}_${SHORT_SHA}_${TIMESTAMP}"
+        BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -cd '[:alnum:]_-' | cut -c1-255)
 
         echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
@@ -114,28 +123,15 @@ runs:
       with:
         github-token: ${{ github.token }}
         script: |
-          await github.rest.pulls.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: "Lokalise translations update",
-            head: "${{ env.branch_name }}",
-            base: "${{ github.ref_name }}",
-            body: "This PR updates translations from Lokalise.",
-            labels: ['lokalise'],
-          });
-
-    # - name: Create Pull Request
-    #   if: steps.pull-files.outputs.has_changes == 'true'
-    #   shell: bash
-    #   env:
-    #     GH_TOKEN: ${{ github.token }}
-    #   run: |
-    #     gh pr create --base ${{ github.ref_name }} \
-    #                   --head "${{ env.branch_name }}" \
-    #                   --title "Lokalise translations update" \
-    #                   --body "" || {
-    #       echo "Failed to create a Pull Request"
-    #       exit 1
-    #     }
-
-    #     echo "Pull Request created successfully."
+          try {
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Lokalise translations update",
+              head: "${{ env.branch_name }}",
+              base: "${{ github.ref_name }}",
+              body: "This PR updates translations from Lokalise.",
+            });
+          } catch (error) {
+            core.setFailed(`Failed to create pull request: ${error.message}`);
+          }
