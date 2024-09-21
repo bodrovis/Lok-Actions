@@ -96,7 +96,11 @@ runs:
 
         git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
       
-        git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force
+        if [[ "${{ inputs.always_pull_base }}" == "true" ]]; then
+          git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force
+        else
+          git add "${{ inputs.translations_path }}/**/*.${{ inputs.file_format }}" --force ":!${{ inputs.translations_path }}/${{ inputs.base_lang }}"
+        fi
         git commit -m 'Translations update'
         git push origin "$BRANCH_NAME"
 
