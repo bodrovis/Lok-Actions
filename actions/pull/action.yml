@@ -109,17 +109,32 @@ runs:
         git push origin "$BRANCH_NAME"
 
     - name: Create Pull Request
-      if: steps.pull-files.outputs.has_changes == 'true'
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        gh pr create --base ${{ github.ref_name }} \
-                      --head "${{ env.branch_name }}" \
-                      --title "Lokalise translations update" \
-                      --body "" || {
-          echo "Failed to create a Pull Request"
-          exit 1
-        }
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          await github.pulls.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: "Lokalise translations update",
+            head: "${{ env.branch_name }}",
+            base: "${{ github.ref_name }}",
+            body: "This PR updates translations from Lokalise.",
+            labels: ['lokalise'],
+          });
 
-        echo "Pull Request created successfully."
+    # - name: Create Pull Request
+    #   if: steps.pull-files.outputs.has_changes == 'true'
+    #   shell: bash
+    #   env:
+    #     GH_TOKEN: ${{ github.token }}
+    #   run: |
+    #     gh pr create --base ${{ github.ref_name }} \
+    #                   --head "${{ env.branch_name }}" \
+    #                   --title "Lokalise translations update" \
+    #                   --body "" || {
+    #       echo "Failed to create a Pull Request"
+    #       exit 1
+    #     }
+
+    #     echo "Pull Request created successfully."

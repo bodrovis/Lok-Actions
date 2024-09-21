@@ -46,7 +46,7 @@ The following mandatory parameters are covered in the [General setup](../../READ
 
 Optional parameters include:
 
-- **`additional_params`** — Extra parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you can use `--convert-placeholders` to handle placeholders. You can include multiple CLI arguments as needed.
+- `additional_params` — Extra parameters to pass to the [Lokalise CLI when pushing files](https://github.com/lokalise/lokalise-cli-2-go/blob/main/docs/lokalise2_file_upload.md). For example, you can use `--convert-placeholders` to handle placeholders. You can include multiple CLI arguments as needed.
 
 ## Technical details
 
@@ -60,11 +60,11 @@ When triggered, this action performs the following steps:
 
 If no changes have been detected in step 1, the following logic applies:
 
-1. The action checks if this is the first run on the triggering branch. To achieve that, it searches for a `[Lokalise-Upload-Complete]` commit.
-   - If this commit is found, it means that the initial push has already been completed. The action will then exit.
-2. If the commit is not found, the action will perform an initial push to Lokalise by uploading all translation files for the base language.
-3. The action creates an empty `[Lokalise-Upload-Complete]` commit, indicating that the initial setup has been successfully completed.
-   - It is heavily recommended to pull changes from the triggering branch to your local repo to include this commit into your local history.
+1. The action checks if this is the first run on the triggering branch. To achieve that, it searches for a `lokalise-upload-complete` tag.
+   - If this tag is found, it means that the initial push has already been completed. The action will then exit.
+2. If the tag is not found, the action will perform an initial push to Lokalise by uploading all translation files for the base language.
+3. The action creates a `lokalise-upload-complete` tag, indicating that the initial setup has been successfully completed.
+   - It is recommended to pull changes from the triggering branch to your local repo to include this tag into your local history.
 
 For more information on assumptions, refer to the [Assumptions and defaults](../../README.md#assumptions-and-defaults) section.
 
