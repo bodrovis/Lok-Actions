@@ -20,11 +20,11 @@ upload_file() {
         sleep_time=$max_sleep_time
     fi
 
-    if ! [[ "$max_retries" =~ ^[0-9]+$ ]] || [ "$max_retries" -lt 1 ]; then
+    if ! [[ "$max_retries" =~ ^[0-9]+$ ]] || [[ "$max_retries" -lt 1 ]]; then
         max_retries=3
     fi
 
-    if ! [[ "$max_total_time" =~ ^[0-9]+$ ]] || [ "$max_total_time" -lt $max_sleep_time ]]; then
+    if ! [[ "$max_total_time" =~ ^[0-9]+$ ]] || [[ "$max_total_time" -lt $max_sleep_time ]]; then
         max_total_time=300
     fi
 
