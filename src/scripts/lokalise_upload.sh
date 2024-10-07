@@ -1,8 +1,13 @@
 #!/bin/bash
 
+return_with_error() {
+    echo "Error: $1" >&2
+    return 1
+}
+
 upload_file() {
     local file=$1
-    local project_id_with_branch=$2
+    local project_id=$2
     local token=$3
     local lang_iso="${BASE_LANG}"
     local additional_params="${CLI_ADD_PARAMS:-}"
@@ -13,6 +18,10 @@ upload_file() {
     local max_total_time=300
     local start_time=$(date +%s)
     local github_ref_name="${GITHUB_REF_NAME}"
+
+    [[ -z "$project_id" ]] && return_with_error "project_id is required and cannot be empty."
+    [[ -z "$token" ]] && return_with_error "token is required and cannot be empty."
+    [[ -z "$lang_iso" ]] && return_with_error "lang_iso is required and cannot be empty."
 
     if [[ "$sleep_time" -lt 1 ]]; then
         sleep_time=1
@@ -33,7 +42,7 @@ upload_file() {
         echo "Attempt $((attempt + 1)) of $max_retries"
 
         output=$(./bin/lokalise2 --token="$token" \
-            --project-id="$project_id_with_branch" \
+            --project-id="$project_id" \
             file upload \
             --file="$file" \
             --lang-iso="$lang_iso" \
@@ -58,8 +67,7 @@ upload_file() {
             current_time=$(date +%s)
             elapsed_time=$((current_time - start_time))
             if [ $elapsed_time -ge $max_total_time ]; then
-                echo "Max total retry time exceeded before sleeping ($max_total_time seconds). Exiting."
-                return 1
+                return_with_error "Max total retry time exceeded before sleeping ($max_total_time seconds). Exiting."
             fi
             echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
             sleep $sleep_time
@@ -68,11 +76,9 @@ upload_file() {
                 sleep_time=$max_sleep_time
             fi
         else
-            echo "Permanent error encountered during upload: $output"
-            return 1
+            return_with_error "Permanent error encountered during upload: $output"
         fi
     done
 
-    echo "Failed to upload file: $file after $max_retries attempts"
-    return 1
+    return_with_error "Failed to upload file: $file after $max_retries attempts"
 }

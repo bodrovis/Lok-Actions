@@ -39,7 +39,7 @@ runs:
   steps:
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v44
+      uses: tj-actions/changed-files@v45
       with:
         files: "${{ inputs.translations_path }}/${{ inputs.base_lang }}/**/**.${{ inputs.file_format }}"
 
@@ -98,7 +98,6 @@ runs:
         
         chmod +x "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh"
 
-        # Pass ALL_FILES or ALL_CHANGED_FILES
         echo "${ALL_FILES:-$ALL_CHANGED_FILES}" | tr ' ' '\n' | xargs -P 6 -I {} bash -c '. "${{ github.action_path }}/../../src/scripts/lokalise_upload.sh" && upload_file "$@"' _ "{}" "${{ inputs.project_id }}" "${{ inputs.api_token }}"
         if [ $? -ne 0 ]; then
           echo "File upload failed"

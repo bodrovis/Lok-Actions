@@ -1,7 +1,12 @@
 #!/bin/bash
 
+return_with_error() {
+    echo "Error: $1" >&2
+    return 1
+}
+
 download_files() {
-    local project_id_with_branch=$1
+    local project_id=$1
     local token=$2
     local additional_params="${CLI_ADD_PARAMS:-}"
     local attempt=0
@@ -12,6 +17,9 @@ download_files() {
     local start_time=$(date +%s)
     local file_format="${FILE_FORMAT}"
     local github_ref_name="${GITHUB_REF_NAME}"
+
+    [[ -z "$project_id" ]] && return_with_error "project_id is required and cannot be empty."
+    [[ -z "$token" ]] && return_with_error "token is required and cannot be empty."
 
     if [[ "$sleep_time" -lt 1 ]]; then
         sleep_time=1
@@ -27,14 +35,14 @@ download_files() {
         max_total_time=300
     fi
 
-    echo "Starting download for project: $project_id_with_branch"
+    echo "Starting download for project: $project_id"
     while [ $attempt -lt $max_retries ]; do
         echo "Attempt $((attempt + 1)) of $max_retries"
 
         set +e
 
         output=$(./bin/lokalise2 --token="$token" \
-            --project-id="$project_id_with_branch" \
+            --project-id="$project_id" \
             file download \
             --format="$file_format" \
             --original-filenames=true \
@@ -54,8 +62,7 @@ download_files() {
             current_time=$(date +%s)
             elapsed_time=$((current_time - start_time))
             if [ $elapsed_time -ge $max_total_time ]; then
-                echo "Max retry time exceeded before sleeping. Exiting."
-                return 1
+                return_with_error "Max retry time exceeded before sleeping. Exiting."
             fi
             echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
             sleep $sleep_time
@@ -67,11 +74,9 @@ download_files() {
             echo "API request error 406: No keys for export with current export settings. Exiting..."
             return 0
         else
-            echo "Error encountered during download: $output"
-            return 1
+            return_with_error "Error encountered during download: $output"
         fi
     done
 
-    echo "Failed to download files after $max_retries attempts"
-    return 1
+    return_with_error "Failed to download files after $max_retries attempts"
 }
