@@ -67,16 +67,16 @@ upload_file() {
             current_time=$(date +%s)
             elapsed_time=$((current_time - start_time))
             if [ $elapsed_time -ge $max_total_time ]; then
-                return_with_error "Max total retry time exceeded before sleeping ($max_total_time seconds). Exiting."
+                return_with_error "Max total retry time exceeded before sleeping ($max_total_time seconds) when uploading $file. Exiting."
             fi
-            echo "Attempt $attempt failed with API request error 429. Retrying in $sleep_time seconds..."
+            echo "Attempt $attempt failed with API request error 429 when uploading $file. Retrying in $sleep_time seconds..."
             sleep $sleep_time
             sleep_time=$((sleep_time * 2))
             if [ $sleep_time -gt $max_sleep_time ]; then
                 sleep_time=$max_sleep_time
             fi
         else
-            return_with_error "Permanent error encountered during upload: $output"
+            return_with_error "Permanent error encountered during file upload $file: $output"
         fi
     done
 
